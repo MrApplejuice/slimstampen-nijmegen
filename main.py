@@ -83,7 +83,7 @@ class TestWordViewer(object):
     self.wordText = visual.TextStim(win, pos=(-.25, -0.2))
     self.typedText = visual.TextStim(win, pos=( .25, -0.2))
     
-  def test(self, word):
+  def test(self, word, checkResponseFunction):
     ANIMATION_TIME = 0.25
     
     TEXT_HEIGHT = 0.1
@@ -108,10 +108,26 @@ class TestWordViewer(object):
     self.typedText.autoDraw = True
     
     history = recordKeyboardInputs(self.__win, self.typedText)
+    
+    typedWord = "" if len(history) == 0 else history[-1]["current_text"]
+    response = checkResponseFunction(typedWord)
+    if response != ApplicationInterface.Response.NONE:
+      if response == ApplicationInterface.Response.CORRECT:
+        self.typedText.color = (0, 1, 0)
+        recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(1))
+      elif response == ApplicationInterface.Response.WRONG:
+        self.typedText.color = (1, 0, 0)
+        self.__win.flip()
+        core.wait(1)
+        recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(10))
+      else:
+        raise ValueError("Wrong value returned by checkResponseFunction")
+    self.typedText.color = (1, 1, 1)
+    
     self.wordText.autoDraw = False
     self.typedText.autoDraw = False
-    
-    return "" if len(history) == 0 else history[-1]["current_text"]
+
+    return typedWord
 
 class HighscoreViewer(object):
   def __init__(self, win):
@@ -155,8 +171,8 @@ Parameter:
   class ThisAppInterface(ApplicationInterface):
     def learn(self, image, word, translation):
       learnWordViewer.show(image, word, translation)
-    def test(self, word):
-      return testWordViewer.test(word)
+    def test(self, word, checkResponseFunction):
+      return testWordViewer.test(word, checkResponseFunction)
     def updateHighscore(self, score):
       highscoreHighscoreViewer.updateHighscore(score)
       
