@@ -32,7 +32,7 @@ class LearnWordViewer(object):
     self.translationText = visual.TextStim(win, pos=( .25, -0.2))
     
   def show(self, image, word, translation):
-    TOTAL_WAIT = 3.0
+    WAIT_TIMES = [15.0, 15.0]
     ANIMATION_TIME = 0.25
     
     TEXT_HEIGHT = 0.1
@@ -56,7 +56,7 @@ class LearnWordViewer(object):
 
     self.wordText.height = TEXT_HEIGHT
     self.__win.flip()
-    recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(TOTAL_WAIT - ANIMATION_TIME))
+    recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(WAIT_TIMES[0] - ANIMATION_TIME))
     
     self.translationText.autoDraw = True
 
@@ -70,7 +70,7 @@ class LearnWordViewer(object):
       now = core.getTime()
 
     self.__win.flip()
-    recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(TOTAL_WAIT - ANIMATION_TIME))
+    recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(WAIT_TIMES[1] - ANIMATION_TIME))
 
     self.wordText.autoDraw = False
     self.translationText.autoDraw = False
