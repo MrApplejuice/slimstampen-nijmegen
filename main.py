@@ -2,6 +2,7 @@ import sys
 
 from visual import MovieVisualizer
 from word_presentation import *
+from editing import recordKeyboardInputs
 
 from dict_csv_serializer import CSVDictList
 
@@ -26,26 +27,91 @@ class LearnWordViewer(object):
   def __init__(self, win):
     self.__win = win
     
-    self.imageComponent = visual.ImageStim(win, pos=(0, -0.5), size=0.2)
-    self.wordText = visual.ImageStim(win, pos=(-.75, 0.2))
-    self.translationText = visual.ImageStim(win, pos=( .75, 0.2))
+    self.imageComponent = visual.ImageStim(win, pos=(0, 0.5), size=0.5)
+    self.wordText = visual.TextStim(win, pos=(-.25, -0.2))
+    self.translationText = visual.TextStim(win, pos=( .25, -0.2))
     
   def show(self, image, word, translation):
+    TOTAL_WAIT = 3.0
+    ANIMATION_TIME = 0.25
+    
+    TEXT_HEIGHT = 0.1
+    
     self.imageComponent.image = image
     self.wordText.text = word
     self.translationText.text = translation
     
-    self.imageComponent.draw()
-    self.wordText.draw()
-    self.__win.flip()
-    core.wait(5)
+    self.imageComponent.autoDraw = True
+    self.wordText.autoDraw = True
     
-    self.imageComponent.draw()
-    self.wordText.draw()
-    self.translationText.draw()
+    # Animate text popup
+    currentHeight = 0.0
+    startTime = core.getTime()
+    now = core.getTime()
+    while now - startTime < ANIMATION_TIME:
+      currentHeight = TEXT_HEIGHT * (now - startTime) / ANIMATION_TIME;
+      self.wordText.height = currentHeight
+      self.__win.flip()
+      now = core.getTime()
+
+    self.wordText.height = TEXT_HEIGHT
     self.__win.flip()
-    core.wait(5)
+    core.wait(TOTAL_WAIT - ANIMATION_TIME)
     
+    self.translationText.autoDraw = True
+
+    currentHeight = 0.0
+    startTime = core.getTime()
+    now = core.getTime()
+    while now - startTime < ANIMATION_TIME:
+      currentHeight = TEXT_HEIGHT * (now - startTime) / ANIMATION_TIME;
+      self.translationText.height = currentHeight
+      self.__win.flip()
+      now = core.getTime()
+
+    self.__win.flip()
+    core.wait(TOTAL_WAIT - ANIMATION_TIME)
+
+    self.wordText.autoDraw = False
+    self.translationText.autoDraw = False
+    self.imageComponent.autoDraw = False
+    
+class TestWordViewer(object):
+  def __init__(self, win):
+    self.__win = win
+    
+    self.wordText = visual.TextStim(win, pos=(-.25, -0.2))
+    self.typedText = visual.TextStim(win, pos=( .25, -0.2))
+    
+  def test(self, word):
+    ANIMATION_TIME = 0.25
+    
+    TEXT_HEIGHT = 0.1
+    
+    self.wordText.text = word
+    
+    self.wordText.autoDraw = True
+    
+    # Animate text popup
+    currentHeight = 0.0
+    startTime = core.getTime()
+    now = core.getTime()
+    while now - startTime < ANIMATION_TIME:
+      currentHeight = TEXT_HEIGHT * (now - startTime) / ANIMATION_TIME;
+      self.wordText.height = currentHeight
+      self.__win.flip()
+      now = core.getTime()
+
+    self.wordText.height = TEXT_HEIGHT
+    self.__win.flip()
+    
+    self.typedText.autoDraw = True
+    
+    history = recordKeyboardInputs(self.__win, self.typedText)
+    self.wordText.autoDraw = False
+    self.typedText.autoDraw = False
+    
+    return "" if len(history) == 0 else history[-1]["current_text"]
 
 if __name__ == '__main__':
   if ("?" in sys.argv[1:]) or ("help" in sys.argv[1:]):
@@ -69,12 +135,16 @@ Parameter:
   # Initialize different "scenes"
   movieViewer = MovieViewer(mainWindow)
   learnWordViewer = LearnWordViewer(mainWindow)
+  testWordViewer = TestWordViewer(mainWindow)
   
   #movieViewer.playMovie("/media/crepo/TEMP/Mnemonic_task/stimuli/MemrisePrizev3.wmv")
   
   class ThisAppInterface(ApplicationInterface):
     def learn(self, image, word, translation):
       learnWordViewer.show(image, word, translation)
+    def test(self, word):
+      return testWordViewer.test(word)
+      
   assignmentModel = AssignmentModel(ThisAppInterface(), stimuli)
 
   assignmentModel.run()
