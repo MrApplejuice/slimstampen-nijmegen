@@ -113,6 +113,18 @@ class TestWordViewer(object):
     
     return "" if len(history) == 0 else history[-1]["current_text"]
 
+class HighscoreViewer(object):
+  def __init__(self, win):
+    self.__win = win
+    
+    self.__score = 0
+    self.highscoreText = visual.TextStim(win, pos=(.7, -0.9), alignHoriz='left', height=0.05)
+    self.updateHighscore(self.__score)
+    self.highscoreText.autoDraw = True
+    
+  def updateHighscore(self, score):
+    self.highscoreText.text = "Jouw score: {}".format(score)
+  
 if __name__ == '__main__':
   if ("?" in sys.argv[1:]) or ("help" in sys.argv[1:]):
     print """
@@ -136,6 +148,7 @@ Parameter:
   movieViewer = MovieViewer(mainWindow)
   learnWordViewer = LearnWordViewer(mainWindow)
   testWordViewer = TestWordViewer(mainWindow)
+  highscoreHighscoreViewer = HighscoreViewer(mainWindow)
   
   #movieViewer.playMovie("/media/crepo/TEMP/Mnemonic_task/stimuli/MemrisePrizev3.wmv")
   
@@ -144,6 +157,8 @@ Parameter:
       learnWordViewer.show(image, word, translation)
     def test(self, word):
       return testWordViewer.test(word)
+    def updateHighscore(self, score):
+      highscoreHighscoreViewer.updateHighscore(score)
       
   assignmentModel = AssignmentModel(ThisAppInterface(), stimuli)
 

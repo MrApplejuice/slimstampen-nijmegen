@@ -5,6 +5,8 @@ class ApplicationInterface(object):
     raise NotImplementedError()
   def test(self, word):
     raise NotImplementedError()
+  def updateHighscore(self, score):
+    raise NotImplementedError()
 
 class AssignmentModel(object):
   def __init__(self, appInterface, stimuli):
@@ -12,6 +14,8 @@ class AssignmentModel(object):
     self.__stimuli = stimuli
     
   def run(self):
+    currentScore = 0
+    
     learnSequence = list(self.__stimuli)
     random.shuffle(learnSequence)
     for stimulus in learnSequence:
@@ -23,3 +27,5 @@ class AssignmentModel(object):
         response = self.__appInterface.test(stimulus["word"])
         if response.lower() == stimulus["translation"].lower():
           repeat = False
+      currentScore += 10
+      self.__appInterface.updateHighscore(currentScore)
