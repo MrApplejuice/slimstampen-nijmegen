@@ -14,7 +14,8 @@ def recordKeyboardInputs(win, textField, finish_key='return', clock=None, give_s
   sentenceOnset = None
     
   while doRecord and ((countdown is None) or (countdown.getTime() > 0)):
-    textField.setText(text)
+    if textField is not None:
+      textField.setText(text)
     win.flip()
     keys = event.getKeys(timeStamped=clock)
     if sentenceOnset is None:

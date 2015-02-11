@@ -56,7 +56,7 @@ class LearnWordViewer(object):
 
     self.wordText.height = TEXT_HEIGHT
     self.__win.flip()
-    core.wait(TOTAL_WAIT - ANIMATION_TIME)
+    recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(TOTAL_WAIT - ANIMATION_TIME))
     
     self.translationText.autoDraw = True
 
@@ -70,7 +70,7 @@ class LearnWordViewer(object):
       now = core.getTime()
 
     self.__win.flip()
-    core.wait(TOTAL_WAIT - ANIMATION_TIME)
+    recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(TOTAL_WAIT - ANIMATION_TIME))
 
     self.wordText.autoDraw = False
     self.translationText.autoDraw = False
