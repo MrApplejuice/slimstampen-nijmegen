@@ -95,9 +95,10 @@ class TestWordViewer(object):
     
     self.wordText = visual.TextStim(win, pos=self.UPPER_TEXT_POS, alignHoriz='left')
     self.typedText = visual.TextStim(win, pos=self.LOWER_TEXT_POS, alignHoriz='left')
+    self.correctAnswer = visual.TextStim(win, pos=self.LOWER_TEXT_POS, alignHoriz='left', color=(0, 1, 0))
     self.strikeThroughLine = visual.Line(win, lineColor=(1, 0, 0), lineWidth=10)
     
-  def test(self, word, checkResponseFunction):
+  def test(self, word, answerToDisplay, checkResponseFunction):
     ANIMATION_TIME = 0.25
     
     TEXT_HEIGHT = 0.1
@@ -147,12 +148,24 @@ class TestWordViewer(object):
         self.strikeThroughLine.start = (self.typedText.pos[0], self.typedText.pos[1] - 0.01)
         self.strikeThroughLine.end = (self.typedText.pos[0] + thisTextWidth, self.typedText.pos[1] - 0.01)
 
+        self.correctAnswer.text = answerToDisplay
+        self.correctAnswer.pos = (self.strikeThroughLine.end[0] + 0.02, self.typedText.pos[1])
+        
+        self.correctAnswer.autoDraw = True
         self.strikeThroughLine.autoDraw = True
         
-        self.__win.flip()
-        core.wait(1)
+        currentHeight = 0.0
+        startTime = core.getTime()
+        now = core.getTime()
+        while now - startTime < ANIMATION_TIME:
+          currentHeight = TEXT_HEIGHT * (now - startTime) / ANIMATION_TIME;
+          self.correctAnswer.height = currentHeight
+          self.__win.flip()
+          now = core.getTime()
+        core.wait(1 - ANIMATION_TIME)
         recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(10))
 
+        self.correctAnswer.autoDraw = False
         self.strikeThroughLine.autoDraw = False
       else:
         raise ValueError("Wrong value returned by checkResponseFunction")
@@ -207,12 +220,12 @@ Parameter:
     #movieViewer.playMovie("/media/crepo/TEMP/Mnemonic_task/stimuli/MemrisePrizev3.wmv")
     
     class ThisAppInterface(ApplicationInterface):
-      def learn(self, image, word, translation):
-        learnWordViewer.show(image, word, translation)
-      def test(self, word, checkResponseFunction):
-        return testWordViewer.test(word, checkResponseFunction)
-      def updateHighscore(self, score):
-        highscoreHighscoreViewer.updateHighscore(score)
+      def learn(self, *args):
+        learnWordViewer.show(*args)
+      def test(self, *args):
+        return testWordViewer.test(*args)
+      def updateHighscore(self, *args):
+        highscoreHighscoreViewer.updateHighscore(*args)
         
     assignmentModel = AssignmentModel(ThisAppInterface(), stimuli)
 

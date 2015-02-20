@@ -8,7 +8,7 @@ class ApplicationInterface(object):
   
   def learn(self, image, word, translation):
     raise NotImplementedError()
-  def test(self, word, checkResponseFunction):
+  def test(self, word, answerToDisplay, checkResponseFunction):
     raise NotImplementedError()
   def updateHighscore(self, score):
     raise NotImplementedError()
@@ -23,8 +23,8 @@ class AssignmentModel(object):
   def run(self):
     learnSequence = list(self.__stimuli)
     random.shuffle(learnSequence)
-    for stimulus in learnSequence:
-      self.__appInterface.learn(stimulus["image"], stimulus["word"], stimulus["translation"])
+    #for stimulus in learnSequence:
+    #  self.__appInterface.learn(stimulus["image"], stimulus["word"], stimulus["translation"])
       
     for stimulus in learnSequence:
       repeat = True
@@ -40,6 +40,6 @@ class AssignmentModel(object):
           else:
             return ApplicationInterface.Response.WRONG
         
-        response = self.__appInterface.test(stimulus["word"], checkResponse)
+        response = self.__appInterface.test(stimulus["word"], stimulus["translation"], checkResponse)
         if compare(response, stimulus["translation"]):
           repeat = False
