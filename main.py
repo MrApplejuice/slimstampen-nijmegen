@@ -26,12 +26,17 @@ class MovieViewer(object):
       self.__win.flip()
 
 class LearnWordViewer(object):
+  UPPER_TEXT_POS = (-0.25, -0.56)
+  LOWER_TEXT_POS = (-0.25, -0.76)
+
   def __init__(self, win):
     self.__win = win
     
-    self.imageComponent = visual.ImageStim(win, pos=(0, 0.5))
-    self.wordText = visual.TextStim(win, pos=(-.25, -0.2))
-    self.translationText = visual.TextStim(win, pos=( .25, -0.2))
+    self.IMAGE_SIZE = 1.3
+    
+    self.imageComponent = visual.ImageStim(win, pos=(0, 1 - (self.IMAGE_SIZE / 2 + 0.05)))
+    self.wordText = visual.TextStim(win, height=0.1, pos=self.UPPER_TEXT_POS, alignHoriz='left')
+    self.translationText = visual.TextStim(win, height=0.1, pos=self.LOWER_TEXT_POS, alignHoriz='left')
     
   def show(self, image, word, translation):
     WAIT_TIMES = [15.0, 15.0]
@@ -41,7 +46,7 @@ class LearnWordViewer(object):
     
     self.imageComponent.size = None
     self.imageComponent.image = image
-    self.imageComponent.size *= 0.8 / self.imageComponent.size[1]
+    self.imageComponent.size *= self.IMAGE_SIZE / self.imageComponent.size[1]
 
     self.wordText.text = word
     self.translationText.text = translation
@@ -82,11 +87,15 @@ class LearnWordViewer(object):
     self.imageComponent.autoDraw = False
     
 class TestWordViewer(object):
+  UPPER_TEXT_POS = LearnWordViewer.UPPER_TEXT_POS
+  LOWER_TEXT_POS = LearnWordViewer.LOWER_TEXT_POS
+
   def __init__(self, win):
     self.__win = win
     
-    self.wordText = visual.TextStim(win, pos=(-.25, -0.2))
-    self.typedText = visual.TextStim(win, pos=( .25, -0.2))
+    self.wordText = visual.TextStim(win, pos=self.UPPER_TEXT_POS, alignHoriz='left')
+    self.typedText = visual.TextStim(win, pos=self.LOWER_TEXT_POS, alignHoriz='left')
+    self.strikeThroughLine = visual.Line(win, lineColor=(1, 0, 0), lineWidth=10)
     
   def test(self, word, checkResponseFunction):
     ANIMATION_TIME = 0.25
@@ -123,10 +132,28 @@ class TestWordViewer(object):
         self.typedText.color = (0, 1, 0)
         recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(1))
       elif response == ApplicationInterface.Response.WRONG:
+        if not self.typedText.text:
+          self.typedText.text = "x"
+        
         self.typedText.color = (1, 0, 0)
+
+        self.typedText.draw()
+
+        # Determine text width using psychopy's pyglet infrastructure
+        glyphList = self.typedText._font.get_glyphs(self.typedText.text)
+        thisPixWidth = sum([0] + [x.advance for x in glyphList])
+        thisTextWidth = thisPixWidth * self.typedText.height / self.typedText._fontHeightPix / 1.5
+        
+        self.strikeThroughLine.start = (self.typedText.pos[0], self.typedText.pos[1] - 0.01)
+        self.strikeThroughLine.end = (self.typedText.pos[0] + thisTextWidth, self.typedText.pos[1] - 0.01)
+
+        self.strikeThroughLine.autoDraw = True
+        
         self.__win.flip()
         core.wait(1)
         recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(10))
+
+        self.strikeThroughLine.autoDraw = False
       else:
         raise ValueError("Wrong value returned by checkResponseFunction")
     self.typedText.color = (1, 1, 1)
@@ -163,6 +190,9 @@ Parameter:
     print "Starting in", "fullscreen" if fullscreenMode else "window", "mode"
     
     mainWindow = visual.Window(fullscr=fullscreenMode, size=(1280, 720))
+    if mainWindow.winType != "pyglet":
+      raise ValueError("Cannot only determine font widths for non-pyglet fonts")
+    print "Main window uses backend: ", mainWindow.winType
 
     # Load stimuli
     stimuli = CSVDictList()
