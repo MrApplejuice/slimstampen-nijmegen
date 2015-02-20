@@ -1,15 +1,13 @@
 import random
 
 class ApplicationInterface(object):
-  class Response:
-    NONE = None
-    CORRECT = 1
-    WRONG = 2
-    LEAK_VISIBLE_ANSWER = 3
-  
   def learn(self, image, word, translation):
     raise NotImplementedError()
-  def test(self, word, answerToDisplay, imageAnswer, checkResponseFunction):
+  def test(self, word, answerToDisplay, imageAnswer):
+    raise NotImplementedError()
+  def displayCorrect(self, typedWord, correctAnswer):
+    raise NotImplementedError()
+  def displayWrong(self, typedWord, correctAnswer, image):
     raise NotImplementedError()
   def mixedup(self, leftUpper, leftLower, rightUpper, rightLower):
     raise NotImplementedError()
@@ -32,20 +30,13 @@ class AssignmentModel(object):
     for stimulus in learnSequence:
       repeat = True
       while repeat:
-        def compare(w1, w2):
-          return w1.lower() == w2.lower()
+        response = self.__appInterface.test(stimulus["word"])
         
-        def checkResponse(typedWord):
-          if compare(typedWord, stimulus["translation"]):
-            self.currentScore += 10
-            self.__appInterface.updateHighscore(self.currentScore)
-            return ApplicationInterface.Response.CORRECT
-          else:
-            return ApplicationInterface.Response.LEAK_VISIBLE_ANSWER
-            return ApplicationInterface.Response.WRONG
-        
-        response = self.__appInterface.test(stimulus["word"], stimulus["translation"], stimulus["image"], checkResponse)
-        if compare(response, stimulus["translation"]):
+        if response.lower() == stimulus["translation"].lower():
+          self.currentScore += 10
+          self.__appInterface.updateHighscore(self.currentScore)
+          self.__appInterface.displayCorrect(response, stimulus["translation"])
           repeat = False
         else:
+          self.__appInterface.displayWrong(response, stimulus["translation"], stimulus["image"])
           self.__appInterface.mixedup("Station", "Bahnhof", "Stadium", "Stadion")

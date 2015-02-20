@@ -19,7 +19,7 @@ def determineTextWidth(fontStimulus):
 
 def setLineStrikethrough(textStim, lineStim):
   lineStim.start = (textStim.pos[0], textStim.pos[1] - 0.01)
-  lineStim.end = (stextStim.pos[0] + determineTextWidth(textStim), textStim.pos[1] - 0.01)
+  lineStim.end = (textStim.pos[0] + determineTextWidth(textStim), textStim.pos[1] - 0.01)
 
 
 class MovieViewer(object):
@@ -104,6 +104,9 @@ class TestWordViewer(LearnWordViewer):
   UPPER_TEXT_POS = LearnWordViewer.UPPER_TEXT_POS
   LOWER_TEXT_POS = LearnWordViewer.LOWER_TEXT_POS
 
+  ANIMATION_TIME = 0.1
+  TEXT_HEIGHT = 0.1
+
   def __init__(self, win):
     super(TestWordViewer, self).__init__(win)
     
@@ -114,12 +117,7 @@ class TestWordViewer(LearnWordViewer):
     self.correctAnswer = visual.TextStim(win, pos=self.LOWER_TEXT_POS, alignHoriz='left', color=(0, 1, 0))
     self.strikeThroughLine = visual.Line(win, lineColor=(1, 0, 0), lineWidth=10)
     
-  def test(self, word, answerToDisplay, imageAnswer, checkResponseFunction):
-    ANIMATION_TIME = 0.1
-    
-    TEXT_HEIGHT = 0.1
-    
-    self._prepareImage(imageAnswer)    
+  def test(self, word):
     self.typedText.color = (1, 1, 1)
 
     self.wordText.text = word
@@ -129,16 +127,16 @@ class TestWordViewer(LearnWordViewer):
     currentHeight = 0.0
     startTime = core.getTime()
     now = core.getTime()
-    while now - startTime < ANIMATION_TIME:
-      currentHeight = TEXT_HEIGHT * (now - startTime) / ANIMATION_TIME;
+    while now - startTime < self.ANIMATION_TIME:
+      currentHeight = self.TEXT_HEIGHT * (now - startTime) / self.ANIMATION_TIME
       self.wordText.height = currentHeight
       self.__win.flip()
       now = core.getTime()
 
-    self.wordText.height = TEXT_HEIGHT
+    self.wordText.height = self.TEXT_HEIGHT
     self.__win.flip()
     
-    self.typedText.height = TEXT_HEIGHT
+    self.typedText.height = self.TEXT_HEIGHT
     self.typedText.autoDraw = True
     
     typedWord = None
@@ -146,59 +144,63 @@ class TestWordViewer(LearnWordViewer):
       history = recordKeyboardInputs(self.__win, self.typedText)
       typedWord = None if len(history) == 0 else history[-1]["current_text"].strip()
 
-    response = checkResponseFunction(typedWord)
-    if response != ApplicationInterface.Response.NONE:
-      if response == ApplicationInterface.Response.CORRECT:
-        self.typedText.color = (0, 1, 0)
-        recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(1))
-      elif response in [ApplicationInterface.Response.WRONG, ApplicationInterface.Response.LEAK_VISIBLE_ANSWER]:
-        if not self.typedText.text:
-          self.typedText.text = "x"
-        
-        self.typedText.color = (1, 0, 0)
-
-        self.typedText.draw()
-
-        thisTextWidth = determineTextWidth(self.typedText)
-        
-        self.strikeThroughLine.start = (self.typedText.pos[0], self.typedText.pos[1] - 0.01)
-        self.strikeThroughLine.end = (self.typedText.pos[0] + thisTextWidth, self.typedText.pos[1] - 0.01)
-
-        self.strikeThroughLine.autoDraw = True
-
-        if response == ApplicationInterface.Response.WRONG:
-          self.correctAnswer.text = answerToDisplay
-          self.correctAnswer.pos = (self.strikeThroughLine.end[0] + 0.02, self.typedText.pos[1])
-          
-          self.correctAnswer.autoDraw = True
-          self.imageComponent.autoDraw = True
-          
-          currentHeight = 0.0
-          startTime = core.getTime()
-          now = core.getTime()
-          while now - startTime < ANIMATION_TIME:
-            currentHeight = TEXT_HEIGHT * (now - startTime) / ANIMATION_TIME;
-            self.correctAnswer.height = currentHeight
-            self.__win.flip()
-            now = core.getTime()
-          self.correctAnswer.height = TEXT_HEIGHT
-          self.__win.flip()
-          core.wait(1 - ANIMATION_TIME)
-          recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(10))
-
-          self.imageComponent.autoDraw = False
-          self.correctAnswer.autoDraw = False
-        else:
-          self.__win.flip()
-      else:
-        raise ValueError("Wrong value returned by checkResponseFunction")
-
-    if response != ApplicationInterface.Response.LEAK_VISIBLE_ANSWER:
-      self.wordText.autoDraw = False
-      self.typedText.autoDraw = False
-      self.strikeThroughLine.autoDraw = False
+    self.wordText.autoDraw = False
+    self.typedText.autoDraw = False
 
     return typedWord
+    
+  def showCorrect(self):
+    self.wordText.autoDraw = True
+    self.typedText.autoDraw = True
+    
+    self.typedText.color = (0, 1, 0)
+    recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(1))
+
+    self.wordText.autoDraw = False
+    self.typedText.autoDraw = False
+
+  def showStrikthroughLine(self):
+    self.typedText.draw()
+    setLineStrikethrough(self.typedText, self.strikeThroughLine)
+    self.strikeThroughLine.autoDraw = True
+
+  def showWrong(self, answerToDisplay, image):
+    self.wordText.autoDraw = True
+    self.typedText.autoDraw = True
+    
+    self._prepareImage(image)
+
+    if not self.typedText.text:
+      self.typedText.text = "x"
+    
+    self.typedText.color = (1, 0, 0)
+
+    self.showStrikthroughLine()
+
+    self.correctAnswer.text = answerToDisplay
+    self.correctAnswer.pos = (self.strikeThroughLine.end[0] + 0.02, self.typedText.pos[1])
+    
+    self.correctAnswer.autoDraw = True
+    self.imageComponent.autoDraw = True
+    
+    currentHeight = 0.0
+    startTime = core.getTime()
+    now = core.getTime()
+    while now - startTime < self.ANIMATION_TIME:
+      currentHeight = self.TEXT_HEIGHT * (now - startTime) / self.ANIMATION_TIME
+      self.correctAnswer.height = currentHeight
+      self.__win.flip()
+      now = core.getTime()
+    self.correctAnswer.height = self.TEXT_HEIGHT
+    self.__win.flip()
+    core.wait(1 - self.ANIMATION_TIME)
+    recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(10))
+
+    self.imageComponent.autoDraw = False
+    self.correctAnswer.autoDraw = False
+    self.strikeThroughLine.autoDraw = False
+    self.wordText.autoDraw = False
+    self.typedText.autoDraw = False
 
 class MixedUpViewer(object):
   UPPER_TEXT_POSITIONS = [LearnWordViewer.UPPER_TEXT_POS, (-LearnWordViewer.UPPER_TEXT_POS[0], LearnWordViewer.UPPER_TEXT_POS[1])]
@@ -310,6 +312,10 @@ Parameter:
         highscoreHighscoreViewer.updateHighscore(*args)
       def mixedup(self, *args):
         mixedupViewer.show(*args)
+      def displayCorrect(self, typedWord, correctWord):
+        testWordViewer.showCorrect()
+      def displayWrong(self, typedWord, correctWord, image):
+        testWordViewer.showWrong(correctWord, image)
         
     assignmentModel = AssignmentModel(ThisAppInterface(), stimuli)
 
