@@ -8,7 +8,7 @@ class ApplicationInterface(object):
   
   def learn(self, image, word, translation):
     raise NotImplementedError()
-  def test(self, word, answerToDisplay, checkResponseFunction):
+  def test(self, word, answerToDisplay, imageAnswer, checkResponseFunction):
     raise NotImplementedError()
   def updateHighscore(self, score):
     raise NotImplementedError()
@@ -40,6 +40,6 @@ class AssignmentModel(object):
           else:
             return ApplicationInterface.Response.WRONG
         
-        response = self.__appInterface.test(stimulus["word"], stimulus["translation"], checkResponse)
+        response = self.__appInterface.test(stimulus["word"], stimulus["translation"], stimulus["image"], checkResponse)
         if compare(response, stimulus["translation"]):
           repeat = False

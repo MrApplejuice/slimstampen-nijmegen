@@ -38,15 +38,18 @@ class LearnWordViewer(object):
     self.wordText = visual.TextStim(win, height=0.1, pos=self.UPPER_TEXT_POS, alignHoriz='left')
     self.translationText = visual.TextStim(win, height=0.1, pos=self.LOWER_TEXT_POS, alignHoriz='left')
     
+  def _prepareImage(self, image):
+    self.imageComponent.size = None
+    self.imageComponent.image = image
+    self.imageComponent.size *= self.IMAGE_SIZE / self.imageComponent.size[1]
+    
   def show(self, image, word, translation):
     WAIT_TIMES = [15.0, 15.0]
     ANIMATION_TIME = 0.25
     
     TEXT_HEIGHT = 0.1
-    
-    self.imageComponent.size = None
-    self.imageComponent.image = image
-    self.imageComponent.size *= self.IMAGE_SIZE / self.imageComponent.size[1]
+
+    self._prepareImage(image)    
 
     self.wordText.text = word
     self.translationText.text = translation
@@ -86,11 +89,13 @@ class LearnWordViewer(object):
     self.translationText.autoDraw = False
     self.imageComponent.autoDraw = False
     
-class TestWordViewer(object):
+class TestWordViewer(LearnWordViewer):
   UPPER_TEXT_POS = LearnWordViewer.UPPER_TEXT_POS
   LOWER_TEXT_POS = LearnWordViewer.LOWER_TEXT_POS
 
   def __init__(self, win):
+    super(TestWordViewer, self).__init__(win)
+    
     self.__win = win
     
     self.wordText = visual.TextStim(win, pos=self.UPPER_TEXT_POS, alignHoriz='left')
@@ -98,13 +103,14 @@ class TestWordViewer(object):
     self.correctAnswer = visual.TextStim(win, pos=self.LOWER_TEXT_POS, alignHoriz='left', color=(0, 1, 0))
     self.strikeThroughLine = visual.Line(win, lineColor=(1, 0, 0), lineWidth=10)
     
-  def test(self, word, answerToDisplay, checkResponseFunction):
+  def test(self, word, answerToDisplay, imageAnswer, checkResponseFunction):
     ANIMATION_TIME = 0.1
     
     TEXT_HEIGHT = 0.1
     
+    self._prepareImage(imageAnswer)    
+
     self.wordText.text = word
-    
     self.wordText.autoDraw = True
     
     # Animate text popup
@@ -153,6 +159,7 @@ class TestWordViewer(object):
         
         self.correctAnswer.autoDraw = True
         self.strikeThroughLine.autoDraw = True
+        self.imageComponent.autoDraw = True
         
         currentHeight = 0.0
         startTime = core.getTime()
@@ -167,6 +174,7 @@ class TestWordViewer(object):
         core.wait(1 - ANIMATION_TIME)
         recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(10))
 
+        self.imageComponent.autoDraw = False
         self.correctAnswer.autoDraw = False
         self.strikeThroughLine.autoDraw = False
       else:
