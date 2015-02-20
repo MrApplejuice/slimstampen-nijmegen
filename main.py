@@ -160,6 +160,8 @@ class TestWordViewer(LearnWordViewer):
     self.typedText.autoDraw = False
 
   def showStrikthroughLine(self):
+    self.typedText.color = (1, 0, 0)
+
     self.typedText.draw()
     setLineStrikethrough(self.typedText, self.strikeThroughLine)
     self.strikeThroughLine.autoDraw = True
@@ -173,8 +175,6 @@ class TestWordViewer(LearnWordViewer):
     if not self.typedText.text:
       self.typedText.text = "x"
     
-    self.typedText.color = (1, 0, 0)
-
     self.showStrikthroughLine()
 
     self.correctAnswer.text = answerToDisplay
@@ -216,6 +216,8 @@ class MixedUpViewer(object):
     self.lowerTexts = [testScreen.typedText, visual.TextStim(win, pos=self.LOWER_TEXT_POSITIONS[1], alignHoriz='left')]
     self.strikeThroughLine = testScreen.strikeThroughLine
     
+    self.showStrikethroughLine = testScreen.showStrikthroughLine
+    
   def show(self, leftUpper, leftLower, rightUpper, rightLower):
     TEXT_HEIGHT = self.TEXT_HEIGHT
     
@@ -223,6 +225,9 @@ class MixedUpViewer(object):
     FORCED_WAIT = 1
     TOTAL_WAIT = 10
     
+    self.upperTexts[0].autoDraw = True
+    self.lowerTexts[0].autoDraw = True
+    self.showStrikethroughLine()
     self.mixedUpText.autoDraw = True
     self.__win.flip()
     core.wait(1)
