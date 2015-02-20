@@ -99,7 +99,7 @@ class TestWordViewer(object):
     self.strikeThroughLine = visual.Line(win, lineColor=(1, 0, 0), lineWidth=10)
     
   def test(self, word, answerToDisplay, checkResponseFunction):
-    ANIMATION_TIME = 0.25
+    ANIMATION_TIME = 0.1
     
     TEXT_HEIGHT = 0.1
     
@@ -162,6 +162,8 @@ class TestWordViewer(object):
           self.correctAnswer.height = currentHeight
           self.__win.flip()
           now = core.getTime()
+        self.correctAnswer.height = TEXT_HEIGHT
+        self.__win.flip()
         core.wait(1 - ANIMATION_TIME)
         recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(10))
 
