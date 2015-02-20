@@ -5,10 +5,13 @@ class ApplicationInterface(object):
     NONE = None
     CORRECT = 1
     WRONG = 2
+    LEAK_VISIBLE_ANSWER = 3
   
   def learn(self, image, word, translation):
     raise NotImplementedError()
   def test(self, word, answerToDisplay, imageAnswer, checkResponseFunction):
+    raise NotImplementedError()
+  def mixedup(self, leftUpper, leftLower, rightUpper, rightLower):
     raise NotImplementedError()
   def updateHighscore(self, score):
     raise NotImplementedError()
@@ -38,8 +41,11 @@ class AssignmentModel(object):
             self.__appInterface.updateHighscore(self.currentScore)
             return ApplicationInterface.Response.CORRECT
           else:
+            return ApplicationInterface.Response.LEAK_VISIBLE_ANSWER
             return ApplicationInterface.Response.WRONG
         
         response = self.__appInterface.test(stimulus["word"], stimulus["translation"], stimulus["image"], checkResponse)
         if compare(response, stimulus["translation"]):
           repeat = False
+        else:
+          self.__appInterface.mixedup("Station", "Bahnhof", "Stadium", "Stadion")

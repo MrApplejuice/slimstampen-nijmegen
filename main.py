@@ -11,6 +11,17 @@ from dict_csv_serializer import CSVDictList
 import psychopy.core as core
 import psychopy.visual as visual
 
+def determineTextWidth(fontStimulus):
+  # Determine text width using psychopy's pyglet infrastructure
+  glyphList = fontStimulus._font.get_glyphs(fontStimulus.text)
+  thisPixWidth = sum([0] + [x.advance for x in glyphList])
+  return thisPixWidth * fontStimulus.height / fontStimulus._fontHeightPix / 1.5
+
+def setLineStrikethrough(textStim, lineStim):
+  lineStim.start = (textStim.pos[0], textStim.pos[1] - 0.01)
+  lineStim.end = (stextStim.pos[0] + determineTextWidth(textStim), textStim.pos[1] - 0.01)
+
+
 class MovieViewer(object):
   def __init__(self, win):
     self.__win = win
@@ -109,6 +120,7 @@ class TestWordViewer(LearnWordViewer):
     TEXT_HEIGHT = 0.1
     
     self._prepareImage(imageAnswer)    
+    self.typedText.color = (1, 1, 1)
 
     self.wordText.text = word
     self.wordText.autoDraw = True
@@ -126,6 +138,7 @@ class TestWordViewer(LearnWordViewer):
     self.wordText.height = TEXT_HEIGHT
     self.__win.flip()
     
+    self.typedText.height = TEXT_HEIGHT
     self.typedText.autoDraw = True
     
     typedWord = None
@@ -138,7 +151,7 @@ class TestWordViewer(LearnWordViewer):
       if response == ApplicationInterface.Response.CORRECT:
         self.typedText.color = (0, 1, 0)
         recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(1))
-      elif response == ApplicationInterface.Response.WRONG:
+      elif response in [ApplicationInterface.Response.WRONG, ApplicationInterface.Response.LEAK_VISIBLE_ANSWER]:
         if not self.typedText.text:
           self.typedText.text = "x"
         
@@ -146,45 +159,103 @@ class TestWordViewer(LearnWordViewer):
 
         self.typedText.draw()
 
-        # Determine text width using psychopy's pyglet infrastructure
-        glyphList = self.typedText._font.get_glyphs(self.typedText.text)
-        thisPixWidth = sum([0] + [x.advance for x in glyphList])
-        thisTextWidth = thisPixWidth * self.typedText.height / self.typedText._fontHeightPix / 1.5
+        thisTextWidth = determineTextWidth(self.typedText)
         
         self.strikeThroughLine.start = (self.typedText.pos[0], self.typedText.pos[1] - 0.01)
         self.strikeThroughLine.end = (self.typedText.pos[0] + thisTextWidth, self.typedText.pos[1] - 0.01)
 
-        self.correctAnswer.text = answerToDisplay
-        self.correctAnswer.pos = (self.strikeThroughLine.end[0] + 0.02, self.typedText.pos[1])
-        
-        self.correctAnswer.autoDraw = True
         self.strikeThroughLine.autoDraw = True
-        self.imageComponent.autoDraw = True
-        
-        currentHeight = 0.0
-        startTime = core.getTime()
-        now = core.getTime()
-        while now - startTime < ANIMATION_TIME:
-          currentHeight = TEXT_HEIGHT * (now - startTime) / ANIMATION_TIME;
-          self.correctAnswer.height = currentHeight
-          self.__win.flip()
-          now = core.getTime()
-        self.correctAnswer.height = TEXT_HEIGHT
-        self.__win.flip()
-        core.wait(1 - ANIMATION_TIME)
-        recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(10))
 
-        self.imageComponent.autoDraw = False
-        self.correctAnswer.autoDraw = False
-        self.strikeThroughLine.autoDraw = False
+        if response == ApplicationInterface.Response.WRONG:
+          self.correctAnswer.text = answerToDisplay
+          self.correctAnswer.pos = (self.strikeThroughLine.end[0] + 0.02, self.typedText.pos[1])
+          
+          self.correctAnswer.autoDraw = True
+          self.imageComponent.autoDraw = True
+          
+          currentHeight = 0.0
+          startTime = core.getTime()
+          now = core.getTime()
+          while now - startTime < ANIMATION_TIME:
+            currentHeight = TEXT_HEIGHT * (now - startTime) / ANIMATION_TIME;
+            self.correctAnswer.height = currentHeight
+            self.__win.flip()
+            now = core.getTime()
+          self.correctAnswer.height = TEXT_HEIGHT
+          self.__win.flip()
+          core.wait(1 - ANIMATION_TIME)
+          recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(10))
+
+          self.imageComponent.autoDraw = False
+          self.correctAnswer.autoDraw = False
+        else:
+          self.__win.flip()
       else:
         raise ValueError("Wrong value returned by checkResponseFunction")
-    self.typedText.color = (1, 1, 1)
-    
-    self.wordText.autoDraw = False
-    self.typedText.autoDraw = False
+
+    if response != ApplicationInterface.Response.LEAK_VISIBLE_ANSWER:
+      self.wordText.autoDraw = False
+      self.typedText.autoDraw = False
+      self.strikeThroughLine.autoDraw = False
 
     return typedWord
+
+class MixedUpViewer(object):
+  UPPER_TEXT_POSITIONS = [LearnWordViewer.UPPER_TEXT_POS, (-LearnWordViewer.UPPER_TEXT_POS[0], LearnWordViewer.UPPER_TEXT_POS[1])]
+  LOWER_TEXT_POSITIONS = [LearnWordViewer.LOWER_TEXT_POS, (-LearnWordViewer.LOWER_TEXT_POS[0], LearnWordViewer.LOWER_TEXT_POS[1])]
+
+  TEXT_HEIGHT = 0.1
+
+  def __init__(self, win, testScreen):
+    self.__win = win
+    
+    self.mixedUpText = visual.TextStim(win, pos=(self.UPPER_TEXT_POSITIONS[0][0], 0), alignHoriz='left', text="You mixed up two words:", height=self.TEXT_HEIGHT)
+    self.upperTexts = [testScreen.wordText,  visual.TextStim(win, pos=self.UPPER_TEXT_POSITIONS[1], alignHoriz='left')]
+    self.lowerTexts = [testScreen.typedText, visual.TextStim(win, pos=self.LOWER_TEXT_POSITIONS[1], alignHoriz='left')]
+    self.strikeThroughLine = testScreen.strikeThroughLine
+    
+  def show(self, leftUpper, leftLower, rightUpper, rightLower):
+    TEXT_HEIGHT = self.TEXT_HEIGHT
+    
+    ANIMATION_TIME = 0.2
+    FORCED_WAIT = 1
+    TOTAL_WAIT = 10
+    
+    self.mixedUpText.autoDraw = True
+    self.__win.flip()
+    core.wait(1)
+
+    self.upperTexts[0].text = leftUpper
+    self.upperTexts[1].text = rightUpper
+    self.lowerTexts[0].text = leftLower
+    self.lowerTexts[1].text = rightLower
+
+    for t in self.upperTexts + self.lowerTexts:
+      t.color = (1, 1, 1)
+      t.autoDraw = True
+    self.strikeThroughLine.autoDraw = False
+      
+    currentHeight = 0.0
+    startTime = core.getTime()
+    now = core.getTime()
+    while now - startTime < ANIMATION_TIME:
+      currentHeight = TEXT_HEIGHT * (now - startTime) / ANIMATION_TIME;
+      for t in self.upperTexts + self.lowerTexts:
+        if t != self.upperTexts[0]: # Do not animate upper left word
+          t.height = currentHeight
+      self.__win.flip()
+      now = core.getTime()
+    for t in self.upperTexts + self.lowerTexts:
+      t.height = TEXT_HEIGHT
+    self.__win.flip()
+    
+    core.wait(FORCED_WAIT - ANIMATION_TIME)
+    
+    recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(TOTAL_WAIT - FORCED_WAIT))
+
+    for t in self.upperTexts + self.lowerTexts:
+      t.autoDraw = False
+    self.mixedUpText.autoDraw = False
 
 class HighscoreViewer(object):
   def __init__(self, win):
@@ -226,6 +297,7 @@ Parameter:
     learnWordViewer = LearnWordViewer(mainWindow)
     testWordViewer = TestWordViewer(mainWindow)
     highscoreHighscoreViewer = HighscoreViewer(mainWindow)
+    mixedupViewer = MixedUpViewer(mainWindow, testWordViewer)
     
     #movieViewer.playMovie("/media/crepo/TEMP/Mnemonic_task/stimuli/MemrisePrizev3.wmv")
     
@@ -236,6 +308,8 @@ Parameter:
         return testWordViewer.test(*args)
       def updateHighscore(self, *args):
         highscoreHighscoreViewer.updateHighscore(*args)
+      def mixedup(self, *args):
+        mixedupViewer.show(*args)
         
     assignmentModel = AssignmentModel(ThisAppInterface(), stimuli)
 
