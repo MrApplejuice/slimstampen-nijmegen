@@ -26,8 +26,6 @@ def calculateActivation(wordItem, time, leaveout=0):
 
 def calculateNewDecay(wordItem, time, leaveout=0):
   if len(wordItem.presentations) - leaveout <= 0:
-    raise ValueError("item's presentation history is not long enough")
-  elif len(wordItem.presentations) - leaveout == 1:
     return _calculateDecayFromActivation(0, wordItem.alpha)
   else:
     m = calculateActivation(wordItem, time, leaveout=leaveout)
