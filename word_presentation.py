@@ -1,5 +1,7 @@
 import random
 
+from model import WordItem, WordItemPresentation
+
 class ApplicationInterface(object):
   def learn(self, image, word, translation):
     raise NotImplementedError()
@@ -17,7 +19,14 @@ class ApplicationInterface(object):
 class AssignmentModel(object):
   def __init__(self, appInterface, stimuli):
     self.__appInterface = appInterface
-    self.__stimuli = stimuli
+    
+    def makeWordItem(wordDict):
+      wi = WordItem(s["word"])
+      wi.translation = s["translation"]
+      wi.image = s["image"]
+      return wi
+    
+    self.__stimuli = [makeWordItem(s) for s in stimuli]
     
     self.currentScore = 0
     
@@ -25,18 +34,18 @@ class AssignmentModel(object):
     learnSequence = list(self.__stimuli)
     random.shuffle(learnSequence)
     #for stimulus in learnSequence:
-    #  self.__appInterface.learn(stimulus["image"], stimulus["word"], stimulus["translation"])
+    #  self.__appInterface.learn(stimulus.image, stimulus.name, stimulus.translation)
       
     for stimulus in learnSequence:
       repeat = True
       while repeat:
-        response = self.__appInterface.test(stimulus["word"])
+        response = self.__appInterface.test(stimulus.name)
         
-        if response.lower() == stimulus["translation"].lower():
+        if response.lower() == stimulus.translation.lower():
           self.currentScore += 10
           self.__appInterface.updateHighscore(self.currentScore)
-          self.__appInterface.displayCorrect(response, stimulus["translation"])
+          self.__appInterface.displayCorrect(response, stimulus.translation)
           repeat = False
         else:
-          self.__appInterface.displayWrong(response, stimulus["translation"], stimulus["image"])
+          self.__appInterface.displayWrong(response, stimulus.translation, stimulus.image)
           self.__appInterface.mixedup("Station", "Bahnhof", "Stadium", "Stadion")
