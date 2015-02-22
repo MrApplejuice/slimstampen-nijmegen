@@ -74,7 +74,7 @@ class AssignmentModel(object):
       if not stimulus:
         raise ValueError("Could not select any stimulus for presentation")
 
-      print "Presented items:\n  ", "\n  ".join([str((calculateActivation(s, predictionTime), s.name, s.alpha, map(str, s.presentations))) for s in presentedItems])
+      #print "Presented items:\n  ", "\n  ".join([str((calculateActivation(s, predictionTime), s.name, s.alpha, map(str, s.presentations))) for s in presentedItems])
 
       newPresentation = WordItemPresentation()
       presentationStartTime = mainTimer()
@@ -102,5 +102,5 @@ class AssignmentModel(object):
           else:
             self.__appInterface.displayWrong(response, stimulus.translation, stimulus.image)
 
-      newPresentation.time = mainTimer()
+      newPresentation.time = presentationStartTime
       stimulus.presentations.append(newPresentation)

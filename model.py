@@ -25,6 +25,7 @@ def calculateActivation(wordItem, time, leaveout=0):
   if len(wordItem.presentations) - leaveout <= 0:
     raise ValueError("activaton undefined for item that was not presented yet")
   else:
+    #print "Using ", [(time - presentation.time, presentation.decay) for presentation in wordItem.presentations[:len(wordItem.presentations) - leaveout]]
     return math.log(sum([(time - presentation.time)**(-presentation.decay) for presentation in wordItem.presentations[:len(wordItem.presentations) - leaveout]])) #calculate activation of second to last
 
 def calculateNewDecay(wordItem, time, leaveout=0):
