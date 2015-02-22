@@ -37,7 +37,7 @@ class CSVDictList(object):
       for lineCounter, csvline in enumerate(csvreader):
         if len(csvline) > len(newHeaders):
           raise ValueError("More columns than headers in line {}".format(lineCounter + 2))
-        newEntries.append(self.CSVListEntry(dict(zip(newHeaders, [(None if v == "" else v) for v in csvline] + [None] * (len(newHeaders) - len(csvline)))), self))
+        newEntries.append(self.CSVListEntry(dict(zip(newHeaders, [(None if v == "" else v.decode('utf-8')) for v in csvline] + [None] * (len(newHeaders) - len(csvline)))), self))
     self.__headers = newHeaders
     self.__entries = newEntries
     
@@ -46,7 +46,7 @@ class CSVDictList(object):
       csvwriter = csv.writer(f)
       csvwriter.writerow(self.__headers)
       for entry in self:
-        csvwriter.writerow([('' if entry[h] is None else entry[h]) for h in self.__headers])
+        csvwriter.writerow([('' if entry[h] is None else entry[h].encode('utf-8')) for h in self.__headers])
       
   def __getitem__(self, i):
     return self.__entries[i]
