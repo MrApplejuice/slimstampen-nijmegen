@@ -135,7 +135,7 @@ class TestWordViewer(LearnWordViewer):
   def test(self, word):
     self.typedText.color = (1, 1, 1)
 
-    self.wordText.text = word
+    self.wordText.text = word + " ?"
     self.wordText.autoDraw = True
     
     # Animate text popup
@@ -155,7 +155,8 @@ class TestWordViewer(LearnWordViewer):
     self.typedText.autoDraw = True
     
     typedWord = None
-    while not typedWord:    
+    initCountdown = core.CountdownTimer(1)
+    while (not typedWord) and (initCountdown.getTime() > 0):
       history = recordKeyboardInputs(self.__win, self.typedText)
       typedWord = None if len(history) == 0 else history[-1]["current_text"].strip()
 
