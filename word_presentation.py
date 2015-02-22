@@ -27,6 +27,8 @@ class ApplicationInterface(object):
     raise NotImplementedError()
   def updateHighscore(self, score):
     raise NotImplementedError()
+  def displayInstructions(self):
+    raise NotImplementedError()
 
 class AssignmentModel(object):
   def __init__(self, appInterface, stimuli):
@@ -53,6 +55,8 @@ class AssignmentModel(object):
   def run(self):
     mainTimer = getTime
     totalTestTimer = CountdownTimer(TOTAL_TEST_DURATION)
+    
+    self.__appInterface.displayInstructions()
     
     while totalTestTimer.getTime() > 0:
       presentedItems = filter(lambda x: len(x.presentations) > 0, self.__stimuli)

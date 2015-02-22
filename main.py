@@ -275,6 +275,31 @@ class HighscoreViewer(object):
     
   def updateHighscore(self, score):
     self.highscoreText.text = "Jouw score: {}".format(score)
+
+class InstructionsViewer(object):
+  def __init__(self, win):
+    self.__win = win
+    
+    self.__texts = [ """
+Welcome to this experiment
+
+Please have lots of fuuuuuuuuuuuuuuun!!!
+
+Press [Enter] to continue
+      """.strip(),
+      """
+Rejoice! We have multiple pages of text!
+      """
+    ]
+    
+    self.textStim = visual.TextStim(win, pos=(-.5, 0), wrapWidth=1, alignHoriz='left', height=0.1)
+  
+  def show(self):
+    self.textStim.autoDraw = True
+    for text in self.__texts:
+      self.textStim.text = text
+      recordKeyboardInputs(self.__win, None)
+    self.textStim.autoDraw = False
   
 if __name__ == '__main__':
   if ("?" in sys.argv[1:]) or ("help" in sys.argv[1:]):
@@ -301,6 +326,7 @@ Parameter:
     
     # Initialize different "scenes"
     movieViewer = MovieViewer(mainWindow)
+    instructionsViewer = InstructionsViewer(mainWindow)
     learnWordViewer = LearnWordViewer(mainWindow)
     testWordViewer = TestWordViewer(mainWindow)
     highscoreHighscoreViewer = HighscoreViewer(mainWindow)
@@ -321,6 +347,8 @@ Parameter:
         testWordViewer.showCorrect()
       def displayWrong(self, typedWord, correctWord, image):
         testWordViewer.showWrong(correctWord, image)
+      def displayInstructions(self):
+        instructionsViewer.show()
         
     assignmentModel = AssignmentModel(ThisAppInterface(), stimuli)
 
