@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from psychopy import core, event
 
 def recordKeyboardInputs(win, textField, finish_key='return', clock=None, give_sentence_onset = False, countdown=None):
@@ -28,7 +30,7 @@ def recordKeyboardInputs(win, textField, finish_key='return', clock=None, give_s
       if key[0] in KEY_TRANSLATION_TABLE:
         key = (KEY_TRANSLATION_TABLE[key[0]], key[1])
         
-      if key[0] in 'abcdefghijklmnopqrstuvwxyz0123456789 .,!?-;:':
+      if key[0] in u'abcdefghijklmnopqrstuvwxyz0123456789 .,!?-;:äüöß':
         text += key[0]
       elif key[0] == finish_key:
         doRecord = False
