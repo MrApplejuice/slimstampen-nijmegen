@@ -318,6 +318,11 @@ Here we have some text describing the
 task at hand!
     """.strip()
 
+    self.endText = visual.TextStim(win, pos=(-.5, 0), wrapWidth=1, alignHoriz='left', height=0.1)
+    self.endText.text = """
+You finished this part! Very good!
+    """.strip()
+
     self.wordsText = visual.TextStim(win, pos=(0, -0.66), wrapWidth=1, alignHoriz='center', height=0.075)
   
   def showImagesAndWords(self, imageWordsPairs):
@@ -352,6 +357,9 @@ task at hand!
       imageStim.autoDraw = False
       self.wordsText.autoDraw = False
     
+    self.endText.autoDraw = True
+    recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(3))
+    self.endText.autoDraw = False
   
 if __name__ == '__main__':
   if ("?" in sys.argv[1:]) or ("help" in sys.argv[1:]):
