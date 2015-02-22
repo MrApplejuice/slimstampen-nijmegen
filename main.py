@@ -278,20 +278,10 @@ class HighscoreViewer(object):
     self.highscoreText.text = "Jouw score: {}".format(score)
 
 class InstructionsViewer(object):
-  def __init__(self, win):
+  def __init__(self, win, texts):
     self.__win = win
     
-    self.__texts = [ """
-Welcome to this experiment
-
-Please have lots of fuuuuuuuuuuuuuuun!!!
-
-Press [Enter] to continue
-      """.strip(),
-      """
-Rejoice! We have multiple pages of text!
-      """
-    ]
+    self.__texts = texts
     
     self.textStim = visual.TextStim(win, pos=(-.5, 0), wrapWidth=1, alignHoriz='left', height=0.1)
   
@@ -325,9 +315,12 @@ Parameter:
     stimuli = CSVDictList()
     stimuli.load("testdata/test.csv")
     
+    instructionTexts = CSVDictList()
+    instructionTexts.load("testdata/instructions.csv")
+    
     # Initialize different "scenes"
     movieViewer = MovieViewer(mainWindow)
-    instructionsViewer = InstructionsViewer(mainWindow)
+    instructionsViewer = InstructionsViewer(mainWindow, [x["text"] for x in instructionTexts])
     learnWordViewer = LearnWordViewer(mainWindow)
     testWordViewer = TestWordViewer(mainWindow)
     highscoreHighscoreViewer = HighscoreViewer(mainWindow)
