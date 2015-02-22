@@ -5,7 +5,7 @@ from model import *
 from psychopy.core import getTime, CountdownTimer
 
 TOTAL_TEST_DURATION = 5 * 60   # seconds
-TEST_BLOCK_DURATION = 3 * 60  # seconds until this block is presented
+TEST_BLOCK_DURATION = 0.5 * 60  # seconds until this block is presented
 
 ACTIVATION_PREDICTION_TIME_OFFSET = 15  # seconds
 ACTIVATION_THRESHOLD_RETEST = -.8

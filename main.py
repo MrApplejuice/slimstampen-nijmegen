@@ -174,7 +174,7 @@ class TestWordViewer(LearnWordViewer):
     self.typedText.autoDraw = True
     
     self.typedText.color = (0, 1, 0)
-    recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(1))
+    recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(0.3))
 
     self.wordText.autoDraw = False
     self.typedText.autoDraw = False
@@ -289,12 +289,13 @@ class HighscoreViewer(object):
     self.__win = win
     
     self.__score = 0
-    self.highscoreText = visual.TextStim(win, pos=(.7, -0.9), alignHoriz='left', height=0.05)
+    self.highscoreText = visual.TextStim(win, pos=(.7, -0.9), alignHoriz='left', height=0.07)
     self.updateHighscore(self.__score)
     self.highscoreText.autoDraw = True
     
   def updateHighscore(self, score):
     self.highscoreText.text = "Jouw score: {}".format(score)
+    
 
 class InstructionsViewer(object):
   def __init__(self, win, texts):
@@ -318,23 +319,23 @@ class InbetweenSessionViewer(object):
     
     self.instructionText = visual.TextStim(win, pos=(-.5, 0), wrapWidth=1, alignHoriz='left', height=0.1)
     self.instructionText.text = """
-You have learned quite some words. Let's see how well you remember the associations that you made!
+You have learned quite some words. Let's see how well you remember them!
 [Enter]
     """.strip()
 
     self.endText = visual.TextStim(win, pos=(-.5, 0), wrapWidth=1, alignHoriz='left', height=0.1)
     self.endText.text = """
-Good job! Recalling words every now and then is  helpful to remember them! Now let's practice some more!
+Good job! Now let's practice some more! [Enter]
     """.strip()
 
     self.wordsText = visual.TextStim(win, pos=(0, -0.66), wrapWidth=1, alignHoriz='center', height=0.075)
   
   def showImagesAndWords(self, imageWordsPairs):
     IMAGE_WAIT = 15
-    IMAGE_FORCED_WAIT = 2
+    IMAGE_FORCED_WAIT = 0
     
     WORDS_AND_IMAGE_WAIT = 15
-    WORDS_AND_IMAGE_FORCED_WAIT = 2
+    WORDS_AND_IMAGE_FORCED_WAIT = 1
     
     self.instructionText.autoDraw = True
     recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(10))
@@ -346,10 +347,10 @@ Good job! Recalling words every now and then is  helpful to remember them! Now l
       imageStim.autoDraw = True
 
       self.__win.flip()
-      core.wait(IMAGE_FORCED_WAIT)
-
-      self.wordsText.text = "[Enter]"
+      
+      self.wordsText.text = "Think of all the words that you practiced in this room! Then press [Enter]!"
       self.wordsText.autoDraw = True
+      core.wait(IMAGE_FORCED_WAIT)
       recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(IMAGE_WAIT - IMAGE_FORCED_WAIT))
       
       self.wordsText.text = words
@@ -362,7 +363,7 @@ Good job! Recalling words every now and then is  helpful to remember them! Now l
       self.wordsText.autoDraw = False
     
     self.endText.autoDraw = True
-    recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(3))
+    recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(5))
     self.endText.autoDraw = False
   
 if __name__ == '__main__':
