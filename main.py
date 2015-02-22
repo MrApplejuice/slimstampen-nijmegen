@@ -193,7 +193,7 @@ class TestWordViewer(LearnWordViewer):
     
     self.showStrikthroughLine()
 
-    self.correctAnswer.text = answerToDisplay
+    self.correctAnswer.text = answerToDisplay + " !"
     self.correctAnswer.pos = (self.strikeThroughLine.end[0] + 0.02, self.typedText.pos[1])
     
     self.correctAnswer.autoDraw = True
