@@ -306,6 +306,52 @@ class InstructionsViewer(object):
       recordKeyboardInputs(self.__win, None)
     self.textStim.autoDraw = False
   
+class InbetweenSessionViewer(object):
+  def __init__(self, win, loadedImages):
+    self.__win = win
+    self.__loadedImages = loadedImages
+    
+    self.instructionText = visual.TextStim(win, pos=(-.5, 0), wrapWidth=1, alignHoriz='left', height=0.1)
+    self.instructionText.text = """
+Here we have some text describing the
+task at hand!
+    """.strip()
+
+    self.wordsText = visual.TextStim(win, pos=(0, -0.66), wrapWidth=1, alignHoriz='center', height=0.075)
+  
+  def showImagesAndWords(self, imageWordsPairs):
+    IMAGE_WAIT = 15
+    IMAGE_FORCED_WAIT = 2
+    
+    WORDS_AND_IMAGE_WAIT = 15
+    WORDS_AND_IMAGE_FORCED_WAIT = 2
+    
+    self.instructionText.autoDraw = True
+    recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(10))
+    self.instructionText.autoDraw = False
+    
+    for image, words in imageWordsPairs:
+      imageStim = self.__loadedImages[image]
+      
+      imageStim.autoDraw = True
+
+      self.__win.flip()
+      core.wait(IMAGE_FORCED_WAIT)
+
+      self.wordsText.text = "[Enter]"
+      self.wordsText.autoDraw = True
+      recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(IMAGE_WAIT - IMAGE_FORCED_WAIT))
+      
+      self.wordsText.text = words
+      
+      self.__win.flip()
+      core.wait(WORDS_AND_IMAGE_FORCED_WAIT)
+      recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(WORDS_AND_IMAGE_WAIT - WORDS_AND_IMAGE_FORCED_WAIT))
+
+      imageStim.autoDraw = False
+      self.wordsText.autoDraw = False
+    
+  
 if __name__ == '__main__':
   if ("?" in sys.argv[1:]) or ("help" in sys.argv[1:]):
     print """
@@ -341,6 +387,7 @@ Parameter:
     testWordViewer = TestWordViewer(mainWindow, allImages)
     highscoreHighscoreViewer = HighscoreViewer(mainWindow)
     mixedupViewer = MixedUpViewer(mainWindow, testWordViewer)
+    inbetweenSessionViewer = InbetweenSessionViewer(mainWindow, allImages)
     
     #movieViewer.playMovie("/media/crepo/TEMP/Mnemonic_task/stimuli/MemrisePrizev3.wmv")
     
@@ -359,6 +406,9 @@ Parameter:
         testWordViewer.showWrong(correctWord, image)
       def displayInstructions(self):
         instructionsViewer.show()
+      def startInbetweenSession(self, imageWordPairs):
+        inbetweenSessionViewer.showImagesAndWords(imageWordPairs)
+        
         
     assignmentModel = AssignmentModel(ThisAppInterface(), stimuli)
 

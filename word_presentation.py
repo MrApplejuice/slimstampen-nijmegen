@@ -5,7 +5,7 @@ from model import *
 from psychopy.core import getTime, CountdownTimer
 
 TOTAL_TEST_DURATION = 5 * 60   # seconds
-TEST_BLOCK_DURATION = 20 * 60  # seconds
+TEST_BLOCK_DURATION = 10  # seconds
 
 ACTIVATION_PREDICTION_TIME_OFFSET = 15  # seconds
 ACTIVATION_THRESHOLD_RETEST = -.8
@@ -28,6 +28,8 @@ class ApplicationInterface(object):
   def updateHighscore(self, score):
     raise NotImplementedError()
   def displayInstructions(self):
+    raise NotImplementedError()
+  def startInbetweenSession(self, imageWordPairs):
     raise NotImplementedError()
 
 class AssignmentModel(object):
@@ -54,9 +56,10 @@ class AssignmentModel(object):
     
   def run(self):
     mainTimer = getTime
-    totalTestTimer = CountdownTimer(TOTAL_TEST_DURATION)
-    
     self.__appInterface.displayInstructions()
+
+    totalTestTimer = CountdownTimer(TOTAL_TEST_DURATION)
+    inbetweenSessionCountdown = CountdownTimer(TEST_BLOCK_DURATION)
     
     while totalTestTimer.getTime() > 0:
       presentedItems = filter(lambda x: len(x.presentations) > 0, self.__stimuli)
@@ -108,3 +111,18 @@ class AssignmentModel(object):
 
       newPresentation.time = presentationStartTime
       stimulus.presentations.append(newPresentation)
+      
+      if inbetweenSessionCountdown.getTime() <= 0:
+        imageWordPairs = {}
+        imageSequence = []
+        for stimulus in self.__stimuli:
+          if stimulus.presentations:
+            translationString = u"{w}={t}".format(w=stimulus.name, t=stimulus.translation)
+            if stimulus.image in imageWordPairs:
+              imageWordPairs[stimulus.image] += u"   " + translationString
+            else:
+              imageWordPairs[stimulus.image] = translationString
+              imageSequence.append(stimulus.image)
+        
+        self.__appInterface.startInbetweenSession([(image, imageWordPairs[image]) for image in imageSequence])
+        inbetweenSessionCountdown = CountdownTimer(TEST_BLOCK_DURATION)
