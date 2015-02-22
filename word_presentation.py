@@ -2,7 +2,17 @@ import random
 
 from model import *
 
-from psychopy.core import getTime
+from psychopy.core import getTime, CountdownTimer
+
+TOTAL_TEST_DURATION = 5 * 60   # seconds
+TEST_BLOCK_DURATION = 20 * 60  # seconds
+
+ACTIVATION_PREDICTION_TIME_OFFSET = 15  # seconds
+ACTIVATION_THRESHOLD_RETEST = -.8
+
+ALPHA_ERROR_ADJUSTMENT_SUMMAND = 0.02
+
+CORRECT_ANSWER_SCORE = 10
 
 class ApplicationInterface(object):
   def learn(self, image, word, translation):
@@ -42,48 +52,55 @@ class AssignmentModel(object):
     
   def run(self):
     mainTimer = getTime
+    totalTestTimer = CountdownTimer(TOTAL_TEST_DURATION)
     
-    learnSequence = list(self.__stimuli)
-    random.shuffle(learnSequence)
-    
-    for stimulus in learnSequence:
-      newPresentation = WordItemPresentation()
-      newPresentation.decay = calculateNewDecay(stimulus, mainTimer())
+    while totalTestTimer.getTime() > 0:
+      presentedItems = filter(lambda x: len(x.presentations) > 0, self.__stimuli)
+      
+      stimulus = None
+      minActivationStimulus = None
+      if len(presentedItems) > 0:
+        # Select item from presented items with activation <= ACTIVATION_THRESHOLD_RETEST
+        predictionTime = mainTimer() + ACTIVATION_PREDICTION_TIME_OFFSET
+        minActivation, minActivationStimulus = min([(calculateActivation(s, predictionTime), s) for s in presentedItems], key=lambda x: x[0])
+        if minActivation <= ACTIVATION_THRESHOLD_RETEST:
+          stimulus = minActivationStimulus
+      if not stimulus:
+        # None under that threshold? Add a new item if possible
+        if len(presentedItems) < len(self.__stimuli):
+          stimulus = self.__stimuli[len(presentedItems)]
+      if not stimulus:
+        stimulus = minActivationStimulus
+      if not stimulus:
+        raise ValueError("Could not select any stimulus for presentation")
 
-      self.__appInterface.learn(stimulus.image, stimulus.name, stimulus.translation)
-      
-      newPresentation.time = mainTimer()
-      stimulus.presentations.append(newPresentation)
-      
-    for x in xrange(20):
-      predictionTime = mainTimer() + 15
-      minActivationStimulus = min([(calculateActivation(s, predictionTime), s) for s in learnSequence], key=lambda x: x[0])[1]
-      print [(calculateActivation(s, predictionTime), s.name, s.alpha) for s in learnSequence]
-      print calculateActivation(minActivationStimulus, predictionTime), minActivationStimulus.name
-      
-      stimulus = minActivationStimulus
-      
+      print "Presented items:\n  ", "\n  ".join([str((calculateActivation(s, predictionTime), s.name, s.alpha, map(str, s.presentations))) for s in presentedItems])
 
       newPresentation = WordItemPresentation()
       presentationStartTime = mainTimer()
       newPresentation.decay = calculateNewDecay(stimulus, presentationStartTime)
 
-      response = self.__appInterface.test(stimulus.name)
-      
-      if response.lower() == stimulus.translation.lower():
-        self.currentScore += 10
-        self.__appInterface.updateHighscore(self.currentScore)
-        self.__appInterface.displayCorrect(response, stimulus.translation)
-        repeat = False
+      if len(stimulus.presentations) == 0:
+        # First presentation of stimulus
+        self.__appInterface.learn(stimulus.image, stimulus.name, stimulus.translation)
       else:
-        stimulus.alpha += 0.02
-        newPresentation.decay = calculateNewDecay(stimulus, presentationStartTime)
+        # Second presentations of stimulus
+        response = self.__appInterface.test(stimulus.name)
         
-        mixedUpWord = self.findMixedUpWord(response)
-        if mixedUpWord:
-          self.__appInterface.mixedup(stimulus.name, stimulus.translation, mixedUpWord.name, mixedUpWord.translation)
+        if response.lower() == stimulus.translation.lower():
+          self.currentScore += CORRECT_ANSWER_SCORE
+          self.__appInterface.updateHighscore(self.currentScore)
+          self.__appInterface.displayCorrect(response, stimulus.translation)
+          repeat = False
         else:
-          self.__appInterface.displayWrong(response, stimulus.translation, stimulus.image)
+          stimulus.alpha += ALPHA_ERROR_ADJUSTMENT_SUMMAND
+          newPresentation.decay = calculateNewDecay(stimulus, presentationStartTime)
+          
+          mixedUpWord = self.findMixedUpWord(response)
+          if mixedUpWord:
+            self.__appInterface.mixedup(stimulus.name, stimulus.translation, mixedUpWord.name, mixedUpWord.translation)
+          else:
+            self.__appInterface.displayWrong(response, stimulus.translation, stimulus.image)
 
       newPresentation.time = mainTimer()
       stimulus.presentations.append(newPresentation)
