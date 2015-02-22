@@ -341,7 +341,7 @@ Good job! Now let's practice some more! [Enter]
     recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(10))
     self.instructionText.autoDraw = False
     
-    for image, words in imageWordsPairs:
+    for image, wordTranslationDataPairs in imageWordsPairs:
       imageStim = self.__loadedImages[image]
       
       imageStim.autoDraw = True
@@ -353,7 +353,7 @@ Good job! Now let's practice some more! [Enter]
       core.wait(IMAGE_FORCED_WAIT)
       recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(IMAGE_WAIT - IMAGE_FORCED_WAIT))
       
-      self.wordsText.text = words
+      self.wordsText.text = "   ".join(["=".join((w, t)) for w, t in wordTranslationDataPairs])
       
       self.__win.flip()
       core.wait(WORDS_AND_IMAGE_FORCED_WAIT)

@@ -117,11 +117,11 @@ class AssignmentModel(object):
         imageSequence = []
         for stimulus in self.__stimuli:
           if stimulus.presentations:
-            translationString = u"{w}={t}".format(w=stimulus.name, t=stimulus.translation)
+            translationData = (stimulus.name, stimulus.translation)
             if stimulus.image in imageWordPairs:
-              imageWordPairs[stimulus.image] += u"   " + translationString
+              imageWordPairs[stimulus.image].append(translationData)
             else:
-              imageWordPairs[stimulus.image] = translationString
+              imageWordPairs[stimulus.image] = [translationData]
               imageSequence.append(stimulus.image)
         
         self.__appInterface.startInbetweenSession([(image, imageWordPairs[image]) for image in imageSequence])
