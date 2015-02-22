@@ -64,6 +64,8 @@ class LearnWordViewer(object):
     self.imageComponent = None
     self.wordText = visual.TextStim(win, height=0.1, pos=self.UPPER_TEXT_POS, alignHoriz='left')
     self.translationText = visual.TextStim(win, height=0.1, pos=self.LOWER_TEXT_POS, alignHoriz='left')
+    self.instructionText = visual.TextStim(win, height=0.07, pos=(-.9, -0.56), alignHoriz='left', wrapWidth = 0.3 )
+    self.instructionText.text = "Make a mental image for the new word!" 
     
   def _prepareImage(self, image):
     self.imageComponent = self.__loadedImages[image]
@@ -75,9 +77,10 @@ class LearnWordViewer(object):
     TEXT_HEIGHT = 0.1
 
     self._prepareImage(image)    
-
+    
     self.wordText.text = word
     self.translationText.text = translation
+    self.instructionText.autoDraw = True 
     
     self.imageComponent.autoDraw = True
     self.wordText.autoDraw = True
@@ -97,7 +100,7 @@ class LearnWordViewer(object):
     recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(WAIT_TIMES[0] - ANIMATION_TIME))
     
     self.translationText.autoDraw = True
-
+    
     currentHeight = 0.0
     startTime = core.getTime()
     now = core.getTime()
@@ -114,12 +117,13 @@ class LearnWordViewer(object):
     self.wordText.autoDraw = False
     self.translationText.autoDraw = False
     self.imageComponent.autoDraw = False
+    self.instructionText.autoDraw =False 
     
 class TestWordViewer(LearnWordViewer):
   UPPER_TEXT_POS = LearnWordViewer.UPPER_TEXT_POS
   LOWER_TEXT_POS = LearnWordViewer.LOWER_TEXT_POS
 
-  ANIMATION_TIME = 0.1
+  ANIMATION_TIME = 0.01
   TEXT_HEIGHT = 0.1
 
   def __init__(self, win, loadedImages):
@@ -314,13 +318,13 @@ class InbetweenSessionViewer(object):
     
     self.instructionText = visual.TextStim(win, pos=(-.5, 0), wrapWidth=1, alignHoriz='left', height=0.1)
     self.instructionText.text = """
-Here we have some text describing the
-task at hand!
+You have learned quite some words. Let's see how well you remember the associations that you made!
+[Enter]
     """.strip()
 
     self.endText = visual.TextStim(win, pos=(-.5, 0), wrapWidth=1, alignHoriz='left', height=0.1)
     self.endText.text = """
-You finished this part! Very good!
+Good job! Recalling words every now and then is  helpful to remember them! Now let's practice some more!
     """.strip()
 
     self.wordsText = visual.TextStim(win, pos=(0, -0.66), wrapWidth=1, alignHoriz='center', height=0.075)
