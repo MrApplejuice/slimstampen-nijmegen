@@ -55,8 +55,8 @@ class LearnWordViewer(object):
     self.imageComponent.size *= self.IMAGE_SIZE / self.imageComponent.size[1]
     
   def show(self, image, word, translation):
-    WAIT_TIMES = [15.0, 15.0]
-    ANIMATION_TIME = 0.25
+    WAIT_TIMES = [15.0, 15.0] # maximum presentation times before program automatically continues, , PP can move on self-paced earlier
+    ANIMATION_TIME = 0.01
     
     TEXT_HEIGHT = 0.1
 
@@ -93,6 +93,7 @@ class LearnWordViewer(object):
       self.__win.flip()
       now = core.getTime()
 
+    self.translationText.height = TEXT_HEIGHT
     self.__win.flip()
     recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(WAIT_TIMES[1] - ANIMATION_TIME))
 
