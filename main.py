@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import sys
+import os
 
 from visual import MovieVisualizer
 from word_presentation import *
@@ -21,6 +22,19 @@ def setLineStrikethrough(textStim, lineStim):
   lineStim.start = (textStim.pos[0], textStim.pos[1] - 0.01)
   lineStim.end = (textStim.pos[0] + determineTextWidth(textStim), textStim.pos[1] - 0.01)
 
+IMAGES_SIZE = 1.3
+IMAGES_LOCATION = (0, 1 - (IMAGES_SIZE / 2 + 0.05))
+def loadAllImages(win, imagePathList):
+  result = {}
+  for path in imagePathList:
+    if path not in result:
+      if not os.path.exists(path):
+        raise ValueError("Image {} does not exist".format(path))
+      imageStim = visual.ImageStim(win, pos=IMAGES_LOCATION)
+      imageStim.image = path
+      imageStim.size *= IMAGES_SIZE / imageStim.size[1]
+      result[path] = imageStim
+  return result
 
 class MovieViewer(object):
   def __init__(self, win):
@@ -40,19 +54,19 @@ class LearnWordViewer(object):
   UPPER_TEXT_POS = (-0.25, -0.56)
   LOWER_TEXT_POS = (-0.25, -0.76)
 
-  def __init__(self, win):
+  IMAGE_SIZE = 1.3
+
+  def __init__(self, win, loadedImages):
     self.__win = win
     
-    self.IMAGE_SIZE = 1.3
+    self.__loadedImages = loadedImages
     
-    self.imageComponent = visual.ImageStim(win, pos=(0, 1 - (self.IMAGE_SIZE / 2 + 0.05)))
+    self.imageComponent = None
     self.wordText = visual.TextStim(win, height=0.1, pos=self.UPPER_TEXT_POS, alignHoriz='left')
     self.translationText = visual.TextStim(win, height=0.1, pos=self.LOWER_TEXT_POS, alignHoriz='left')
     
   def _prepareImage(self, image):
-    self.imageComponent.size = None
-    self.imageComponent.image = image
-    self.imageComponent.size *= self.IMAGE_SIZE / self.imageComponent.size[1]
+    self.imageComponent = self.__loadedImages[image]
     
   def show(self, image, word, translation):
     WAIT_TIMES = [15.0, 15.0] # maximum presentation times before program automatically continues, , PP can move on self-paced earlier
@@ -108,8 +122,8 @@ class TestWordViewer(LearnWordViewer):
   ANIMATION_TIME = 0.1
   TEXT_HEIGHT = 0.1
 
-  def __init__(self, win):
-    super(TestWordViewer, self).__init__(win)
+  def __init__(self, win, loadedImages):
+    super(TestWordViewer, self).__init__(win, loadedImages)
     
     self.__win = win
     
@@ -314,15 +328,17 @@ Parameter:
     # Load stimuli
     stimuli = CSVDictList()
     stimuli.load("testdata/test.csv")
-    
+
     instructionTexts = CSVDictList()
     instructionTexts.load("testdata/instructions.csv")
+    
+    allImages = loadAllImages(mainWindow, [x["image"] for x in stimuli])
     
     # Initialize different "scenes"
     movieViewer = MovieViewer(mainWindow)
     instructionsViewer = InstructionsViewer(mainWindow, [x["text"] for x in instructionTexts])
-    learnWordViewer = LearnWordViewer(mainWindow)
-    testWordViewer = TestWordViewer(mainWindow)
+    learnWordViewer = LearnWordViewer(mainWindow, allImages)
+    testWordViewer = TestWordViewer(mainWindow, allImages)
     highscoreHighscoreViewer = HighscoreViewer(mainWindow)
     mixedupViewer = MixedUpViewer(mainWindow, testWordViewer)
     
