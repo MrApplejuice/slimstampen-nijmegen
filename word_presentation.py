@@ -47,26 +47,43 @@ class AssignmentModel(object):
     random.shuffle(learnSequence)
     
     for stimulus in learnSequence:
+      newPresentation = WordItemPresentation()
+      newPresentation.decay = calculateNewDecay(stimulus, mainTimer())
+
       self.__appInterface.learn(stimulus.image, stimulus.name, stimulus.translation)
       
-      newPresentation = WordItemPresentation()
       newPresentation.time = mainTimer()
-      newPresentation.decay = calculateNewDecay(stimulus, mainTimer())
       stimulus.presentations.append(newPresentation)
       
-    for stimulus in learnSequence:
-      repeat = True
-      while repeat:
-        response = self.__appInterface.test(stimulus.name)
+    for x in xrange(20):
+      predictionTime = mainTimer() + 15
+      minActivationStimulus = min([(calculateActivation(s, predictionTime), s) for s in learnSequence], key=lambda x: x[0])[1]
+      print [(calculateActivation(s, predictionTime), s.name, s.alpha) for s in learnSequence]
+      print calculateActivation(minActivationStimulus, predictionTime), minActivationStimulus.name
+      
+      stimulus = minActivationStimulus
+      
+
+      newPresentation = WordItemPresentation()
+      presentationStartTime = mainTimer()
+      newPresentation.decay = calculateNewDecay(stimulus, presentationStartTime)
+
+      response = self.__appInterface.test(stimulus.name)
+      
+      if response.lower() == stimulus.translation.lower():
+        self.currentScore += 10
+        self.__appInterface.updateHighscore(self.currentScore)
+        self.__appInterface.displayCorrect(response, stimulus.translation)
+        repeat = False
+      else:
+        stimulus.alpha += 0.02
+        newPresentation.decay = calculateNewDecay(stimulus, presentationStartTime)
         
-        if response.lower() == stimulus.translation.lower():
-          self.currentScore += 10
-          self.__appInterface.updateHighscore(self.currentScore)
-          self.__appInterface.displayCorrect(response, stimulus.translation)
-          repeat = False
+        mixedUpWord = self.findMixedUpWord(response)
+        if mixedUpWord:
+          self.__appInterface.mixedup(stimulus.name, stimulus.translation, mixedUpWord.name, mixedUpWord.translation)
         else:
-          mixedUpWord = self.findMixedUpWord(response)
-          if mixedUpWord:
-            self.__appInterface.mixedup(stimulus.name, stimulus.translation, mixedUpWord.name, mixedUpWord.translation)
-          else:
-            self.__appInterface.displayWrong(response, stimulus.translation, stimulus.image)
+          self.__appInterface.displayWrong(response, stimulus.translation, stimulus.image)
+
+      newPresentation.time = mainTimer()
+      stimulus.presentations.append(newPresentation)
