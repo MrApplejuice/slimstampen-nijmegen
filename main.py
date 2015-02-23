@@ -472,6 +472,10 @@ Parameter:
     
     print "Starting in", "fullscreen" if fullscreenMode else "window", "mode"
     
+    participantInfo = showParticipantDataDialog()
+    if participantInfo is None:
+      sys.exit(0)
+
     mainWindow = visual.Window(fullscr=fullscreenMode, size=(1280, 720))
     animationWindow = mainWindow
     if mainWindow.winType != "pyglet":
@@ -515,10 +519,6 @@ Parameter:
         instructionsViewer.show()
       def startInbetweenSession(self, imageWordPairs):
         inbetweenSessionViewer.showImagesAndWords(imageWordPairs)
-      
-    participantInfo = showParticipantDataDialog()
-    if participantInfo is None:
-      sys.exit(0)
     
     assignmentModel = AssignmentModel(ThisAppInterface(), stimuli)
 
