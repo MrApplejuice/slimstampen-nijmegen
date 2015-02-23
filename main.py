@@ -352,7 +352,8 @@ class HighscoreViewer(object):
     animationFunctions.append(self.__updateAnimation)
     
   def updateHighscore(self, score):
-    self.animate("+{}".format(score - self.__score))
+    if score - self.__score > 0:
+      self.animate("+{}".format(score - self.__score))
     self.__score = score
     self.highscoreText.text = "Jouw score: {}".format(score)
     
