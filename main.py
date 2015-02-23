@@ -139,7 +139,7 @@ class TestWordViewer(LearnWordViewer):
   def test(self, word):
     self.typedText.color = (1, 1, 1)
 
-    self.wordText.text = word + " ?"
+    self.wordText.text = word 
     self.wordText.autoDraw = True
     
     # Animate text popup
@@ -353,7 +353,7 @@ Good job! Now let's practice some more! [Enter]
       core.wait(IMAGE_FORCED_WAIT)
       recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(IMAGE_WAIT - IMAGE_FORCED_WAIT))
       
-      self.wordsText.text = "   ".join(["=".join((w, t)) for w, t in wordTranslationDataPairs])
+      self.wordsText.text = "These are the words:\n" + "   ".join(["=".join((w, t)) for w, t in wordTranslationDataPairs])
       
       self.__win.flip()
       core.wait(WORDS_AND_IMAGE_FORCED_WAIT)
