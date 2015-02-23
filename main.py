@@ -7,7 +7,7 @@ from datetime import datetime
 
 from visual import MovieVisualizer
 from word_presentation import *
-from editing import recordKeyboardInputs
+import editing
 
 from dict_csv_serializer import CSVDictList
 
@@ -38,6 +38,27 @@ def loadAllImages(win, imagePathList):
       imageStim.size *= IMAGES_SIZE / imageStim.size[1]
       result[path] = imageStim
   return result
+
+# Animation related functions
+animationWindow = None
+animationFunctions = []
+def stepAnimations():
+  for f in animationFunctions:
+    f()
+  
+def recordKeyboardInputs(*args, **argv):
+  return editing.recordKeyboardInputs(*args, idleFunction=stepAnimations, **argv)
+
+def animatedWait(delay):
+  STEP_RESOLUTION=0.01
+  timer = core.CountdownTimer(delay)
+  while timer.getTime() > 0:
+    stepAnimations()
+    if animationWindow is not None:
+      animationWindow.flip()
+    if timer.getTime() > STEP_RESOLUTION:
+      core.wait(STEP_RESOLUTION)
+
 
 class MovieViewer(object):
   def __init__(self, win):
@@ -216,7 +237,7 @@ class TestWordViewer(LearnWordViewer):
       now = core.getTime()
     self.correctAnswer.height = self.TEXT_HEIGHT
     self.__win.flip()
-    core.wait(1 - self.ANIMATION_TIME)
+    animatedWait(1 - self.ANIMATION_TIME)
     recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(10))
 
     self.imageComponent.autoDraw = False
@@ -253,7 +274,7 @@ class MixedUpViewer(object):
     self.showStrikethroughLine()
     self.mixedUpText.autoDraw = True
     self.__win.flip()
-    core.wait(1)
+    animatedWait(1)
 
     self.upperTexts[0].text = leftUpper
     self.upperTexts[1].text = rightUpper
@@ -279,7 +300,7 @@ class MixedUpViewer(object):
       t.height = TEXT_HEIGHT
     self.__win.flip()
     
-    core.wait(FORCED_WAIT - ANIMATION_TIME)
+    animatedWait(FORCED_WAIT - ANIMATION_TIME)
     
     recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(TOTAL_WAIT - FORCED_WAIT))
 
@@ -287,18 +308,74 @@ class MixedUpViewer(object):
       t.autoDraw = False
     self.mixedUpText.autoDraw = False
 
+
+def calculateParabolaFunction(p1, p2, p3):
+  alpha = (p1[1] - p2[1]) / (p2[1] - p3[1])
+  c = (alpha * (p2[0]**2 - p3[0]**2) + p2[0]**2 - p1[0]**2) / (2 * (p2[0] + alpha * p2[0] - p1[0] - alpha * p3[0]))
+  b = (p1[1] - p2[1]) / ((p1[0] - c)**2 - (p2[0] - c)**2)
+  a = p1[1] - b * (p1[0] - c)**2
+  
+  def parabola(x):
+    return a + b * (x - c)**2
+  return parabola
+
 class HighscoreViewer(object):
+  HIGHSCORE_TEXT_POS = (.7, -0.9)
+  
+  ANIMATION_CONTROL_POINTS = (tuple(TestWordViewer.LOWER_TEXT_POS),
+                              ((TestWordViewer.LOWER_TEXT_POS[0] + HIGHSCORE_TEXT_POS[0]) / 2, 0.25), 
+                              (HIGHSCORE_TEXT_POS[0] + 0.1, HIGHSCORE_TEXT_POS[1]))
+  ANIMATION_DURATION = 0.3
+
+  # Parameters a, b, c defining the parabola  a + b * (x - c)^2
+  __ANIMATION_PATH_PARABOLA = (calculateParabolaFunction(*ANIMATION_CONTROL_POINTS),)
+  
+  @property
+  def ANIMATION_PATH_PARABOLA(self):
+    """ small property to unpack packed parabola function """
+    return self.__ANIMATION_PATH_PARABOLA[0]
+
   def __init__(self, win):
+    global animationFunctions
+    
     self.__win = win
     
     self.__score = 0
-    self.highscoreText = visual.TextStim(win, pos=(.7, -0.9), alignHoriz='left', height=0.07)
+    self.highscoreText = visual.TextStim(win, pos=self.HIGHSCORE_TEXT_POS, alignHoriz='left', height=0.07)
     self.updateHighscore(self.__score)
     self.highscoreText.autoDraw = True
     
+    self.animationTextStim = visual.TextStim(win, pos=(0.0, 0.0), color=(0, 1, 0), alignHoriz='center', height=0.14)
+    self.animationStartTime = None
+    self.animationText = ""
+    
+    animationFunctions.append(self.__updateAnimation)
+    
   def updateHighscore(self, score):
+    if score - self.__score > 0:
+      self.animate("+{}".format(score - self.__score))
+    self.__score = score
     self.highscoreText.text = "Jouw score: {}".format(score)
     
+  def animate(self, scoreText):
+    self.animationStartTime = core.getTime()
+    self.animationText = scoreText
+    
+  def __updateAnimation(self):
+    if self.animationStartTime is not None:
+      timeOffset = core.getTime() - self.animationStartTime
+      if timeOffset > self.ANIMATION_DURATION:
+        self.animationTextStim.autoDraw = False
+        self.animationStartTime = None
+      else:
+        self.animationTextStim.autoDraw = False # Hack to guarantee that this stimulus is one of the last drawn...
+        self.animationTextStim.autoDraw = True
+        self.animationTextStim.text = self.animationText
+        
+        x = self.ANIMATION_CONTROL_POINTS[0][0] + timeOffset / self.ANIMATION_DURATION * (self.ANIMATION_CONTROL_POINTS[2][0] - self.ANIMATION_CONTROL_POINTS[0][0])
+        y = self.ANIMATION_PATH_PARABOLA(x)
+        
+        self.animationTextStim.pos = (x, y)
 
 class InstructionsViewer(object):
   def __init__(self, win, texts):
@@ -353,13 +430,13 @@ Good job! Now let's practice some more! [Enter]
       
       self.wordsText.text = "Think of all the words that you practiced in this room! Then press [Enter]!"
       self.wordsText.autoDraw = True
-      core.wait(IMAGE_FORCED_WAIT)
+      animatedWait(IMAGE_FORCED_WAIT)
       recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(IMAGE_WAIT - IMAGE_FORCED_WAIT))
       
       self.wordsText.text = "These are the words:\n" + "   ".join(["=".join((w, t)) for w, t in wordTranslationDataPairs])
       
       self.__win.flip()
-      core.wait(WORDS_AND_IMAGE_FORCED_WAIT)
+      animatedWait(WORDS_AND_IMAGE_FORCED_WAIT)
       recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(WORDS_AND_IMAGE_WAIT - WORDS_AND_IMAGE_FORCED_WAIT))
 
       imageStim.autoDraw = False
@@ -380,7 +457,7 @@ def showParticipantDataDialog():
     return None
   else:
     return dict(zip(("participant_id", "participant_age", "participant_gender"), dlg.data))
-  
+
 if __name__ == '__main__':
   if ("?" in sys.argv[1:]) or ("help" in sys.argv[1:]):
     print """
@@ -396,6 +473,7 @@ Parameter:
     print "Starting in", "fullscreen" if fullscreenMode else "window", "mode"
     
     mainWindow = visual.Window(fullscr=fullscreenMode, size=(1280, 720))
+    animationWindow = mainWindow
     if mainWindow.winType != "pyglet":
       raise ValueError("Cannot only determine font widths for non-pyglet fonts")
     print "Main window uses backend: ", mainWindow.winType

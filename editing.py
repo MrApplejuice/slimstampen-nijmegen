@@ -2,7 +2,7 @@
 
 from psychopy import core, event
 
-def recordKeyboardInputs(win, textField, finish_key='return', clock=None, give_sentence_onset=False, countdown=None, shadowText=None, shadowTextColor=(0.5, 0.5, 0.5)):
+def recordKeyboardInputs(win, textField, finish_key='return', clock=None, give_sentence_onset=False, countdown=None, shadowText=None, shadowTextColor=(0.5, 0.5, 0.5), idleFunction=None):
   if clock is None:
     clock = core.Clock()    
     
@@ -19,6 +19,8 @@ def recordKeyboardInputs(win, textField, finish_key='return', clock=None, give_s
     normalTextColor = textField.color
   
   while doRecord and ((countdown is None) or (countdown.getTime() > 0)):
+    if idleFunction:
+      idleFunction()
     if textField is not None:
       if text or not shadowText:
         textField.color = normalTextColor
@@ -27,6 +29,7 @@ def recordKeyboardInputs(win, textField, finish_key='return', clock=None, give_s
         textField.color = shadowTextColor
         textField.text = shadowText
     win.flip()
+
     keys = event.getKeys(timeStamped=clock)
     if sentenceOnset is None:
       sentenceOnset = clock.getTime()
@@ -51,6 +54,8 @@ def recordKeyboardInputs(win, textField, finish_key='return', clock=None, give_s
 
   if textField is not None:
     textField.color = normalTextColor
+    if (not text) and shadowText:
+      textField.text = ""
   
   if give_sentence_onset:
     return history, sentenceOnset
