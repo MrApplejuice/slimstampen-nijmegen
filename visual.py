@@ -1,7 +1,7 @@
 import os
 
 import psychopy.visual as visual
-from psychopy.visual.movie2 import MovieStim2
+#from psychopy.visual.movie2 import MovieStim2
 from psychopy.constants import FINISHED, NOT_STARTED, PAUSED, PLAYING, STOPPED
 
 class MovieVisualizer(object):

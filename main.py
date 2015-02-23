@@ -255,7 +255,7 @@ class MixedUpViewer(object):
   def __init__(self, win, testScreen):
     self.__win = win
     
-    self.mixedUpText = visual.TextStim(win, pos=(self.UPPER_TEXT_POSITIONS[0][0], 0), alignHoriz='left', text="You mixed up two words:", height=self.TEXT_HEIGHT)
+    self.mixedUpText = visual.TextStim(win, pos=(self.UPPER_TEXT_POSITIONS[0][0], 0), alignHoriz='left', text="Je hebt twee woorden door elkaar gehaald:", height=self.TEXT_HEIGHT)
     self.upperTexts = [testScreen.wordText,  visual.TextStim(win, pos=self.UPPER_TEXT_POSITIONS[1], alignHoriz='left')]
     self.lowerTexts = [testScreen.typedText, visual.TextStim(win, pos=self.LOWER_TEXT_POSITIONS[1], alignHoriz='left')]
     self.strikeThroughLine = testScreen.strikeThroughLine
@@ -320,10 +320,10 @@ def calculateParabolaFunction(p1, p2, p3):
   return parabola
 
 class HighscoreViewer(object):
-  HIGHSCORE_TEXT_POS = (.7, -0.9)
+  HIGHSCORE_TEXT_POS = (.6, -0.9)
   
   ANIMATION_CONTROL_POINTS = (tuple(TestWordViewer.LOWER_TEXT_POS),
-                              ((TestWordViewer.LOWER_TEXT_POS[0] + HIGHSCORE_TEXT_POS[0]) / 2, 0.25), 
+                              ((TestWordViewer.LOWER_TEXT_POS[0] + HIGHSCORE_TEXT_POS[0]) / 2, 0), 
                               (HIGHSCORE_TEXT_POS[0] + 0.1, HIGHSCORE_TEXT_POS[1]))
   ANIMATION_DURATION = 0.3
 
