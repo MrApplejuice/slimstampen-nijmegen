@@ -13,6 +13,7 @@ from dict_csv_serializer import CSVDictList
 
 import psychopy.core as core
 import psychopy.visual as visual
+import psychopy.gui as gui
 
 def determineTextWidth(fontStimulus):
   # Determine text width using psychopy's pyglet infrastructure
@@ -367,6 +368,18 @@ Good job! Now let's practice some more! [Enter]
     self.endText.autoDraw = True
     recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(5))
     self.endText.autoDraw = False
+
+def showParticipantDataDialog():
+  dlg = gui.Dlg(title="Participant data")
+  dlg.addField("Patient ID")
+  dlg.addField("Patient Age")
+  
+  dlg.show()
+  
+  if not dlg.OK:
+    return None
+  else:
+    return dict(zip(("participant_id", "participant_age"), dlg.data))
   
 if __name__ == '__main__':
   if ("?" in sys.argv[1:]) or ("help" in sys.argv[1:]):
@@ -424,7 +437,10 @@ Parameter:
         instructionsViewer.show()
       def startInbetweenSession(self, imageWordPairs):
         inbetweenSessionViewer.showImagesAndWords(imageWordPairs)
-        
+      
+    participantInfo = showParticipantDataDialog()
+    if participantInfo is None:
+      sys.exit(0)
     
     assignmentModel = AssignmentModel(ThisAppInterface(), stimuli)
 
@@ -438,6 +454,7 @@ Parameter:
       
       for d in assignmentModel.stimuliSummary:
         d["time"] = nowString
+        d = dict(participantInfo.items() + d.items())
         learnDataList.append(d)
       
       learnDataList.save(targetFilename)
