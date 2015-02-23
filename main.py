@@ -311,7 +311,7 @@ class MixedUpViewer(object):
 
 def calculateParabolaFunction(p1, p2, p3):
   alpha = (p1[1] - p2[1]) / (p2[1] - p3[1])
-  c = (alpha * (p2[0]**2 - p3[0]) + p2[0]**2 - p1[0]**2) / (2 * (p2[0] + alpha * p2[0] - p1[0] - alpha * p3[0]))
+  c = (alpha * (p2[0]**2 - p3[0]**2) + p2[0]**2 - p1[0]**2) / (2 * (p2[0] + alpha * p2[0] - p1[0] - alpha * p3[0]))
   b = (p1[1] - p2[1]) / ((p1[0] - c)**2 - (p2[0] - c)**2)
   a = p1[1] - b * (p1[0] - c)**2
   
@@ -322,8 +322,10 @@ def calculateParabolaFunction(p1, p2, p3):
 class HighscoreViewer(object):
   HIGHSCORE_TEXT_POS = (.7, -0.9)
   
-  ANIMATION_CONTROL_POINTS = (TestWordViewer.LOWER_TEXT_POS, ((TestWordViewer.LOWER_TEXT_POS[0] + HIGHSCORE_TEXT_POS[0]) / 2, 0.25), HIGHSCORE_TEXT_POS)
-  ANIMATION_DURATION = 1.0
+  ANIMATION_CONTROL_POINTS = (tuple(TestWordViewer.LOWER_TEXT_POS),
+                              ((TestWordViewer.LOWER_TEXT_POS[0] + HIGHSCORE_TEXT_POS[0]) / 2, 0.25), 
+                              (HIGHSCORE_TEXT_POS[0] + 0.1, HIGHSCORE_TEXT_POS[1]))
+  ANIMATION_DURATION = 0.3
 
   # Parameters a, b, c defining the parabola  a + b * (x - c)^2
   __ANIMATION_PATH_PARABOLA = (calculateParabolaFunction(*ANIMATION_CONTROL_POINTS),)
@@ -372,7 +374,6 @@ class HighscoreViewer(object):
         x = self.ANIMATION_CONTROL_POINTS[0][0] + timeOffset / self.ANIMATION_DURATION * (self.ANIMATION_CONTROL_POINTS[2][0] - self.ANIMATION_CONTROL_POINTS[0][0])
         y = self.ANIMATION_PATH_PARABOLA(x)
         
-        print timeOffset / self.ANIMATION_DURATION
         self.animationTextStim.pos = (x, y)
 
 class InstructionsViewer(object):
