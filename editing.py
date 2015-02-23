@@ -2,22 +2,30 @@
 
 from psychopy import core, event
 
-def recordKeyboardInputs(win, textField, finish_key='return', clock=None, give_sentence_onset = False, countdown=None):
+def recordKeyboardInputs(win, textField, finish_key='return', clock=None, give_sentence_onset=False, countdown=None, shadowText=None, shadowTextColor=(0.5, 0.5, 0.5)):
   if clock is None:
     clock = core.Clock()    
     
   KEY_TRANSLATION_TABLE = {'pound': '#', 'comma': ',', 'period': '.', 'plus': '+', 'minus': '-', 'space': ' '}
-    
+  
   event.clearEvents()
   
   doRecord = True
   text = ""
   history = []
   sentenceOnset = None
-    
+  
+  if textField is not None:
+    normalTextColor = textField.color
+  
   while doRecord and ((countdown is None) or (countdown.getTime() > 0)):
     if textField is not None:
-      textField.setText(text)
+      if text or not shadowText:
+        textField.color = normalTextColor
+        textField.text = text
+      elif shadowText:
+        textField.color = shadowTextColor
+        textField.text = shadowText
     win.flip()
     keys = event.getKeys(timeStamped=clock)
     if sentenceOnset is None:
@@ -40,6 +48,9 @@ def recordKeyboardInputs(win, textField, finish_key='return', clock=None, give_s
       history.append({'key': rawkey, 'time': key[1], 'current_text': text})
       if not doRecord:
         break
+
+  if textField is not None:
+    textField.color = normalTextColor
   
   if give_sentence_onset:
     return history, sentenceOnset

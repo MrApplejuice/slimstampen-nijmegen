@@ -161,7 +161,7 @@ class TestWordViewer(LearnWordViewer):
     typedWord = None
     initCountdown = core.CountdownTimer(1)
     while (not typedWord) and (initCountdown.getTime() > 0):
-      history = recordKeyboardInputs(self.__win, self.typedText)
+      history = recordKeyboardInputs(self.__win, self.typedText, shadowText="...?")
       typedWord = None if len(history) == 0 else history[-1]["current_text"].strip()
 
     self.wordText.autoDraw = False
