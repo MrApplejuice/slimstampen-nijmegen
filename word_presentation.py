@@ -53,6 +53,13 @@ class AssignmentModel(object):
         if typedWord == s.translation:
           return s
     return None
+
+  @property
+  def stimuliSummary(self):
+    return [{"word": stimulus.name, 
+             "translation": stimulus.translation, 
+             "#presentations": len(stimulus.presentations),
+             "alpha": stimulus.alpha} for stimulus in self.__stimuli]
     
   def run(self):
     mainTimer = getTime

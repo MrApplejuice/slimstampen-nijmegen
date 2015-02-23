@@ -2,6 +2,8 @@
 
 import sys
 import os
+import signal
+from datetime import datetime
 
 from visual import MovieVisualizer
 from word_presentation import *
@@ -393,7 +395,7 @@ Parameter:
     instructionTexts.load("resources/instructions.csv")
     
     allImages = loadAllImages(mainWindow, [x["image"] for x in stimuli])
-    
+
     # Initialize different "scenes"
     movieViewer = MovieViewer(mainWindow)
     instructionsViewer = InstructionsViewer(mainWindow, [x["text"] for x in instructionTexts])
@@ -423,7 +425,29 @@ Parameter:
       def startInbetweenSession(self, imageWordPairs):
         inbetweenSessionViewer.showImagesAndWords(imageWordPairs)
         
-        
+    
     assignmentModel = AssignmentModel(ThisAppInterface(), stimuli)
 
+    def saveData():
+      targetFilename = "learn-data-summary.csv"
+      nowString = datetime.now().isoformat()
+      
+      learnDataList = CSVDictList()
+      if os.path.exists(targetFilename):
+        learnDataList.load(targetFilename)
+      
+      for d in assignmentModel.stimuliSummary:
+        d["time"] = nowString
+        learnDataList.append(d)
+      
+      learnDataList.save(targetFilename)
+
+    def handleTermination(signal, frame):
+      print "Saving session data before termination"
+      saveData()
+      sys.exit(1)
+      
+    signal.signal(signal.SIGINT, handleTermination)
     assignmentModel.run()
+    
+    saveData()

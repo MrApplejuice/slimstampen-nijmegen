@@ -46,7 +46,7 @@ class CSVDictList(object):
       csvwriter = csv.writer(f)
       csvwriter.writerow(self.__headers)
       for entry in self:
-        csvwriter.writerow([('' if entry[h] is None else entry[h].encode('utf-8')) for h in self.__headers])
+        csvwriter.writerow([('' if entry[h] is None else unicode(entry[h]).encode('utf-8')) for h in self.__headers])
       
   def __getitem__(self, i):
     return self.__entries[i]
@@ -59,3 +59,8 @@ class CSVDictList(object):
 
   def __len__(self):
     return len(self.__entries)
+
+  def append(self, entry):
+    for key in sorted(entry.keys()):
+      self._makeHeader(key)
+    self.__entries.append(self.CSVListEntry(dict(entry), self))
