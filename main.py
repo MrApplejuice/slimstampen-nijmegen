@@ -68,7 +68,7 @@ class LearnWordViewer(object):
     self.wordText = visual.TextStim(win, height=0.1, pos=self.UPPER_TEXT_POS, alignHoriz='left')
     self.translationText = visual.TextStim(win, height=0.1, pos=self.LOWER_TEXT_POS, alignHoriz='left')
     self.instructionText = visual.TextStim(win, height=0.07, pos=(-.8, -0.56), alignHoriz='left', wrapWidth = 0.3 )
-    self.instructionText.text = "Make an image for the new word!" 
+    self.instructionText.text = "Vorm een beeld bij het woord en druk Enter!" 
     
   def _prepareImage(self, image):
     self.imageComponent = self.__loadedImages[image]
