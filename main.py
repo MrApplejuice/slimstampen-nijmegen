@@ -371,15 +371,15 @@ Good job! Now let's practice some more! [Enter]
 
 def showParticipantDataDialog():
   dlg = gui.Dlg(title="Participant data")
-  dlg.addField("Patient ID")
-  dlg.addField("Patient Age")
-  
+  dlg.addField("ID")
+  dlg.addField("Age")
+  dlg.addField("Gender", choices=["male", "female"])
   dlg.show()
   
   if not dlg.OK:
     return None
   else:
-    return dict(zip(("participant_id", "participant_age"), dlg.data))
+    return dict(zip(("participant_id", "participant_age", "participant_gender"), dlg.data))
   
 if __name__ == '__main__':
   if ("?" in sys.argv[1:]) or ("help" in sys.argv[1:]):
