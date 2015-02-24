@@ -412,7 +412,7 @@ Ga eerst in gedachten de kamers af waarin je je de woorden voorgesteld hebt. Wee
 
     self.endText = visual.TextStim(win, pos=(-.5, 0), wrapWidth=1, alignHoriz='left', height=0.1)
     self.endText.text = """
-Good job! Now let's practice some more! [Enter]
+Goed! Nu ga je weer verder oefenen! [Enter]
     """.strip()
 
     self.wordsText = visual.TextStim(win, pos=(0, -0.66), wrapWidth=1, alignHoriz='center', height=0.075)
