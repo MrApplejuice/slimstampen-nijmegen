@@ -400,7 +400,13 @@ class InbetweenSessionViewer(object):
     
     self.instructionText = visual.TextStim(win, pos=(-.5, 0), wrapWidth=1, alignHoriz='left', height=0.1)
     self.instructionText.text = """
-You have learned quite some words. Let's see how well you remember them!
+Je hebt al veel woorden geleerd. Laten we eens kijken hoe goed je de woorden onthouden hebt! 
+[Enter]
+    """.strip()
+    
+    self.instructionText2 = visual.TextStim(win, pos=(-.5, 0), wrapWidth=1, alignHoriz='left', height=0.1)
+    self.instructionText2.text = """
+Ga eerst in gedachten de kamers af waarin je je de woorden voorgesteld hebt. Weet je nog welke kamers je gezien hebt?
 [Enter]
     """.strip()
 
@@ -422,6 +428,10 @@ Good job! Now let's practice some more! [Enter]
     recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(10))
     self.instructionText.autoDraw = False
     
+    self.instructionText2.autoDraw = True
+    recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(10))
+    self.instructionText2.autoDraw = False
+    
     for image, wordTranslationDataPairs in imageWordsPairs:
       imageStim = self.__loadedImages[image]
       
@@ -429,12 +439,12 @@ Good job! Now let's practice some more! [Enter]
 
       self.__win.flip()
       
-      self.wordsText.text = "Think of all the words that you practiced in this room! Then press [Enter]!"
+      self.wordsText.text = "Denk nu aan alle woorden die je je in deze kamer voorgesteld hebt. Druk dan op [Enter]!"
       self.wordsText.autoDraw = True
       animatedWait(IMAGE_FORCED_WAIT)
       recordKeyboardInputs(self.__win, None, countdown=core.CountdownTimer(IMAGE_WAIT - IMAGE_FORCED_WAIT))
       
-      self.wordsText.text = "These are the words:\n" + "   ".join(["=".join((w, t)) for w, t in wordTranslationDataPairs])
+      self.wordsText.text = "Dit zijn de woorden:\n" + "   ".join(["=".join((w, t)) for w, t in wordTranslationDataPairs])
       
       self.__win.flip()
       animatedWait(WORDS_AND_IMAGE_FORCED_WAIT)
