@@ -221,7 +221,7 @@ class TestWordViewer(LearnWordViewer):
     
     self.showStrikthroughLine()
 
-    self.correctAnswer.text = answerToDisplay + " !"
+    self.correctAnswer.text = answerToDisplay 
     self.correctAnswer.pos = (self.strikeThroughLine.end[0] + 0.02, self.typedText.pos[1])
     
     self.correctAnswer.autoDraw = True
@@ -391,7 +391,8 @@ class InstructionsViewer(object):
       self.textStim.text = text
       recordKeyboardInputs(self.__win, None)
     self.textStim.autoDraw = False
-  
+    
+    
 class InbetweenSessionViewer(object):
   def __init__(self, win, loadedImages):
     self.__win = win
@@ -499,6 +500,7 @@ Parameter:
     highscoreHighscoreViewer = HighscoreViewer(mainWindow)
     mixedupViewer = MixedUpViewer(mainWindow, testWordViewer)
     inbetweenSessionViewer = InbetweenSessionViewer(mainWindow, allImages)
+    finalScreenViewer = InstructionsViewer(mainWindow, ["""Je bent klaar met het experiment. Bedankt en tot volgende week!"""])
     
     #movieViewer.playMovie("/media/crepo/TEMP/Mnemonic_task/stimuli/MemrisePrizev3.wmv")
     
@@ -546,3 +548,4 @@ Parameter:
     assignmentModel.run()
     
     saveData()
+    finalScreenViewer.show()
