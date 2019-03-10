@@ -10,14 +10,22 @@ class Confirmable:
         print("INIT CONFIRMABLE")
         
         self._Confirmable__call = None
-        window.addEventListener("keydown", self.__button_pressed)
+        window.addEventListener("keydown", self._confirmable__button_pressed)
+        
+        self.pixi.view.addEventListener("click", self._confirmable__clicked)
     
-    def __button_pressed(self, event):
-        if self._Confirmable__call is not None:
-            if event.key == "Enter":
-                call = self._Confirmable__call
-                self._Confirmable__call = None
-                call()
+    def _confirmable_confim(self):
+        if not self._Confirmable__call == None:
+            call = self._Confirmable__call
+            self._Confirmable__call = None
+            call()
+        
+    def _confirmable__clicked(self, event):
+        self._confirmable_confim()
+    
+    def _confirmable__button_pressed(self, event):
+        if event.key == "Enter":
+            self._confirmable_confim()
 
     def confirm(self, call):
         self._Confirmable__call = call
