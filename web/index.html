@@ -3,6 +3,7 @@
 	<meta charset="utf-8">
 </head>
 <body>
+<script src="jquery-3.3.1.min.js"></script>
 <script src="pixi.js"></script>
 <script type="text/javascript">
 function do_new(obj, ...args) {
@@ -10,6 +11,9 @@ function do_new(obj, ...args) {
 }
 function js_time() {
 	return +new Date();
+}
+PIXI.Application.prototype.createRenderer = function (options) {
+	return new PIXI.CanvasRenderer(options);
 }
 </script>
 <script type="module">

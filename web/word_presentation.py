@@ -91,8 +91,10 @@ class ApplicationInterface(object):
 
 
 class AssignmentModel(object):
+    __app_interface = None #: :type app_interface: ApplicationInterface
+    
     def __init__(self, appInterface, stimuli):
-        self.__app_interface = appInterface # type: ApplicationInterface
+        self.__app_interface = appInterface 
 
         def makeWordItem(s):
             wi = WordItem(s["word"].strip().lower())
@@ -138,7 +140,8 @@ class AssignmentModel(object):
         
         if self.__state is None:
             self.__state = "instructions"
-            self.__app_interface
+            self.__app_interface.displayInstructions()
+            return
         
         presentedItems = [
             x for x in self.__stimuli if len(x.presentations) > 0
@@ -164,6 +167,12 @@ class AssignmentModel(object):
         if not stimulus:
             raise ValueError("Could not select any stimulus for presentation")
 
+        #newPresentation = WordItemPresentation()
+        #presentationStartTime = self.main_timer
+        #newPresentation.decay = calculateNewDecay(
+        #        stimulus, presentationStartTime)
+
+
     def __run(self):
         while totalTestTimer.getTime() > 0:
 
@@ -172,10 +181,6 @@ class AssignmentModel(object):
             # ".join([str((calculateActivation(s, predictionTime), s.name, s.alpha,
             # map(str, s.presentations))) for s in presentedItems])
 
-            newPresentation = WordItemPresentation()
-            presentationStartTime = mainTimer()
-            newPresentation.decay = calculateNewDecay(
-                    stimulus, presentationStartTime)
 
             if len(stimulus.presentations) == 0:
                 # First presentation of stimulus
