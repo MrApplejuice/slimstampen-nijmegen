@@ -1,4 +1,5 @@
 from pixi_interface import PIXIInterface
+from word_presentation import AssignmentModel
 
 def determineTextWidth(fontStimulus):
     # Determine text width using psychopy's pyglet infrastructure
@@ -30,6 +31,17 @@ def load_all_images(imagePathList):
 
 
 def main():
+    stimuli = [
+        {
+            "word": "test",
+            "translation": "ttest",
+            "image": "test.png"
+        }
+    ] * 10
+    
     pixi_interface = PIXIInterface(document.body)
+    
+    model = AssignmentModel(pixi_interface, stimuli)
+    model.iter_run()
     #load_all_images(imagePathList)
 

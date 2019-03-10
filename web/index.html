@@ -8,6 +8,9 @@
 function do_new(obj, ...args) {
 	return new obj(...args);
 }
+function js_time() {
+	return +new Date();
+}
 </script>
 <script type="module">
 	import * as _py_main from './__target__/main.js';

@@ -1,6 +1,17 @@
 import random
 import math
 
+def enter_leave_print(text):
+    def decorate(f):
+        def result(*args, **kwargs):
+            print("Enter:", text)
+            try:
+                return f(*args, **kwargs)
+            finally:
+                print("Leave:", text)
+        return result
+    return decorate
+
 
 class WordItemPresentation:
     def __init__(self, time=0, decay=0):
@@ -73,13 +84,17 @@ class ApplicationInterface(object):
 
     def startInbetweenSession(self, imageWordPairs):
         raise NotImplementedError()
+    
+    @property
+    def done(self):
+        return True
 
 
 class AssignmentModel(object):
     def __init__(self, appInterface, stimuli):
-        self.__appInterface = appInterface
+        self.__app_interface = appInterface # type: ApplicationInterface
 
-        def makeWordItem(wordDict):
+        def makeWordItem(s):
             wi = WordItem(s["word"].strip().lower())
             wi.translation = s["translation"].strip().lower()
             wi.image = s["image"].strip()
@@ -88,6 +103,12 @@ class AssignmentModel(object):
         self.__stimuli = [makeWordItem(s) for s in stimuli]
 
         self.currentScore = 0
+
+        self.__main_time = js_time()
+        self.__total_test_time = js_time()
+        self.__inbetween_session_time = js_time()
+
+        self.__state = None
 
     def findMixedUpWord(self, typedWord):
         typedWord = typedWord.lower().strip()
@@ -106,86 +127,97 @@ class AssignmentModel(object):
             "alpha": stimulus.alpha
         } for stimulus in self.__stimuli]
 
-        def run(self):
-            mainTimer = getTime
-            self.__appInterface.displayInstructions()
+    @property
+    def main_timer(self):
+        return (js_time() - self.__main_time) / 1000
 
-            totalTestTimer = CountdownTimer(TOTAL_TEST_DURATION)
-            inbetweenSessionCountdown = CountdownTimer(TEST_BLOCK_DURATION)
+    @enter_leave_print("iter_run")
+    def iter_run(self):
+        if not self.__app_interface.done:
+            return
+        
+        if self.__state is None:
+            self.__state = "instructions"
+            self.__app_interface
+        
+        presentedItems = [
+            x for x in self.__stimuli if len(x.presentations) > 0
+        ]
+        
+        stimulus = None
+        minActivationStimulus = None
+        if len(presentedItems) > 0:
+            # Select item from presented items with activation <=
+            # ACTIVATION_THRESHOLD_RETEST
+            predictionTime = self.main_timer + ACTIVATION_PREDICTION_TIME_OFFSET
+            minActivation, minActivationStimulus = \
+                min([(calculateActivation(s, predictionTime), s) for s in presentedItems],
+                    key=lambda x: x[0])
+            if minActivation <= ACTIVATION_THRESHOLD_RETEST:
+                stimulus = minActivationStimulus
+        if not stimulus:
+            # None under that threshold? Add a new item if possible
+            if len(presentedItems) < len(self.__stimuli):
+                stimulus = self.__stimuli[len(presentedItems)]
+        if not stimulus:
+            stimulus = minActivationStimulus
+        if not stimulus:
+            raise ValueError("Could not select any stimulus for presentation")
 
-            while totalTestTimer.getTime() > 0:
-                presentedItems = filter(lambda x: len(
-                        x.presentations) > 0, self.__stimuli)
+    def __run(self):
+        while totalTestTimer.getTime() > 0:
 
-                stimulus = None
-                minActivationStimulus = None
-                if len(presentedItems) > 0:
-                    # Select item from presented items with activation <=
-                    # ACTIVATION_THRESHOLD_RETEST
-                    predictionTime = mainTimer() + ACTIVATION_PREDICTION_TIME_OFFSET
-                    minActivation, minActivationStimulus = min([(calculateActivation(
-                            s, predictionTime), s) for s in presentedItems], key=lambda x: x[0])
-                    if minActivation <= ACTIVATION_THRESHOLD_RETEST:
-                        stimulus = minActivationStimulus
-                if not stimulus:
-                    # None under that threshold? Add a new item if possible
-                    if len(presentedItems) < len(self.__stimuli):
-                        stimulus = self.__stimuli[len(presentedItems)]
-                if not stimulus:
-                    stimulus = minActivationStimulus
-                if not stimulus:
-                    raise ValueError("Could not select any stimulus for presentation")
 
-                # print "Presented items:\n    ", "\n
-                # ".join([str((calculateActivation(s, predictionTime), s.name, s.alpha,
-                # map(str, s.presentations))) for s in presentedItems])
+            # print "Presented items:\n    ", "\n
+            # ".join([str((calculateActivation(s, predictionTime), s.name, s.alpha,
+            # map(str, s.presentations))) for s in presentedItems])
 
-                newPresentation = WordItemPresentation()
-                presentationStartTime = mainTimer()
-                newPresentation.decay = calculateNewDecay(
-                        stimulus, presentationStartTime)
+            newPresentation = WordItemPresentation()
+            presentationStartTime = mainTimer()
+            newPresentation.decay = calculateNewDecay(
+                    stimulus, presentationStartTime)
 
-                if len(stimulus.presentations) == 0:
-                    # First presentation of stimulus
-                    self.__appInterface.learn(
-                            stimulus.image, stimulus.name, stimulus.translation)
+            if len(stimulus.presentations) == 0:
+                # First presentation of stimulus
+                self.__app_interface.learn(
+                        stimulus.image, stimulus.name, stimulus.translation)
+            else:
+                # Second presentations of stimulus
+                response = self.__app_interface.test(stimulus.name)
+
+                if response.lower() == stimulus.translation.lower():
+                    self.currentScore += CORRECT_ANSWER_SCORE
+                    self.__app_interface.updateHighscore(self.currentScore)
+                    self.__app_interface.displayCorrect(response, stimulus.translation)
+                    repeat = False
                 else:
-                    # Second presentations of stimulus
-                    response = self.__appInterface.test(stimulus.name)
+                    stimulus.alpha += ALPHA_ERROR_ADJUSTMENT_SUMMAND
+                    newPresentation.decay = calculateNewDecay(
+                            stimulus, presentationStartTime)
 
-                    if response.lower() == stimulus.translation.lower():
-                        self.currentScore += CORRECT_ANSWER_SCORE
-                        self.__appInterface.updateHighscore(self.currentScore)
-                        self.__appInterface.displayCorrect(response, stimulus.translation)
-                        repeat = False
+                    mixedUpWord = self.findMixedUpWord(response)
+                    if mixedUpWord:
+                        self.__app_interface.mixedup(
+                                stimulus.name, stimulus.translation, mixedUpWord.name, mixedUpWord.translation)
                     else:
-                        stimulus.alpha += ALPHA_ERROR_ADJUSTMENT_SUMMAND
-                        newPresentation.decay = calculateNewDecay(
-                                stimulus, presentationStartTime)
+                        self.__app_interface.displayWrong(
+                                response, stimulus.translation, stimulus.image)
 
-                        mixedUpWord = self.findMixedUpWord(response)
-                        if mixedUpWord:
-                            self.__appInterface.mixedup(
-                                    stimulus.name, stimulus.translation, mixedUpWord.name, mixedUpWord.translation)
+            newPresentation.time = presentationStartTime
+            stimulus.presentations.append(newPresentation)
+
+            if inbetweenSessionCountdown.getTime() <= 0:
+                imageWordPairs = {}
+                imageSequence = []
+                for stimulus in self.__stimuli:
+                    if stimulus.presentations:
+                        translationData = (stimulus.name, stimulus.translation)
+                        if stimulus.image in imageWordPairs:
+                            imageWordPairs[stimulus.image].append(translationData)
                         else:
-                            self.__appInterface.displayWrong(
-                                    response, stimulus.translation, stimulus.image)
+                            imageWordPairs[stimulus.image] = [translationData]
+                            imageSequence.append(stimulus.image)
 
-                newPresentation.time = presentationStartTime
-                stimulus.presentations.append(newPresentation)
-
-                if inbetweenSessionCountdown.getTime() <= 0:
-                    imageWordPairs = {}
-                    imageSequence = []
-                    for stimulus in self.__stimuli:
-                        if stimulus.presentations:
-                            translationData = (stimulus.name, stimulus.translation)
-                            if stimulus.image in imageWordPairs:
-                                imageWordPairs[stimulus.image].append(translationData)
-                            else:
-                                imageWordPairs[stimulus.image] = [translationData]
-                                imageSequence.append(stimulus.image)
-
-                    self.__appInterface.startInbetweenSession(
-                            [(image, imageWordPairs[image]) for image in imageSequence])
-                    inbetweenSessionCountdown = CountdownTimer(TEST_BLOCK_DURATION)
+                self.__app_interface.startInbetweenSession(
+                        [(image, imageWordPairs[image]) for image in imageSequence])
+                inbetweenSessionCountdown = CountdownTimer(TEST_BLOCK_DURATION)

@@ -1,4 +1,6 @@
+TRANSCRYPT ?= transcrypt
+
 .PHONY: all
 
 all:
-	transcrypt -b -m -n -k -o main.py
+	$(TRANSCRYPT) -b -m -n -k -o main.py
