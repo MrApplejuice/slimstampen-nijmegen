@@ -35,13 +35,16 @@ def main():
         {
             "word": "test",
             "translation": "ttest",
-            "image": "test.png"
+            "image": "room1.jpg"
         }
     ] * 10
     
-    pixi_interface = PIXIInterface(document.body)
-    
+    pixi_interface = PIXIInterface(
+        document.body)
     model = AssignmentModel(pixi_interface, stimuli)
+
+    pixi_interface.done_callback = lambda : window.setTimeout(model.iter_run, 0)
+    
     model.iter_run()
     #load_all_images(imagePathList)
 

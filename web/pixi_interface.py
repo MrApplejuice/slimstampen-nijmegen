@@ -1,19 +1,43 @@
 import re
 
-class InstructionsMixin:
+class Confirmable:
+    _confirmable_initialized = False
+    
+    def __init__(self):
+        if self._confirmable_initialized:
+            return
+        self._confirmable_initialized = True
+        print("INIT CONFIRMABLE")
+        
+        self._Confirmable__call = None
+        window.addEventListener("keydown", self.__button_pressed)
+    
+    def __button_pressed(self, event):
+        if self._Confirmable__call is not None:
+            if event.key == "Enter":
+                call = self._Confirmable__call
+                self._Confirmable__call = None
+                call()
+
+    def confirm(self, call):
+        self._Confirmable__call = call
+    
+
+class InstructionsMixin(Confirmable):
     pixi = None
     
     def __init__(self):
-        self._done = True
-        self.__active = False
-        self.__current_index = None
+        super().__init__()
         
-        self.__instructions = None
+        self._inst__active = False
+        self._inst__current_index = None
+        
+        self._inst__instructions = None
         jQuery.ajax({
             "url": "resources/instructions.txt",
         }).done(self.__assign_instructions)
         
-        self.__text_field = do_new(
+        self._inst__text_field = do_new(
             PIXI.Text,
             "",
             {
@@ -22,51 +46,137 @@ class InstructionsMixin:
                 "fill": 0x000000,
             })
         
-        addEventListener("keydown", self.__button_pressed)
-        
     def __assign_instructions(self, text):
-        self.__instructions = [
+        self._inst__instructions = [
             t.strip() for t in 
             re.split("-{5,}", text)
         ]
-        if self.__active:
+        if self._inst__active:
             self.displayInstructions()
-
-    def __button_pressed(self, event):
-        if self.__active and self.__instructions:
-            if event.key == "Enter":
-                self.displayInstructions()
 
     def displayInstructions(self):
         self._done = False
         
-        if not self.__active:
-            self.pixi.stage.addChild(self.__text_field)
-        self.__active = True
+        if not self._inst__active:
+            self.pixi.stage.addChild(self._inst__text_field)
+        self._inst__active = True
         
         self.pixi.ticker.stop()
         
-        if self.__instructions:
-            if self.__current_index is None:
-                self.__current_index = 0;
+        if self._inst__instructions:
+            if self._inst__current_index is None:
+                self._inst__current_index = 0;
             else:
-                self.__current_index += 1
-            if self.__current_index >= len(self.__instructions):
-                self.__current_index = None
-                self.__active = False
+                self._inst__current_index += 1
+            if self._inst__current_index >= len(self._inst__instructions):
+                self._inst__current_index = None
+                self._inst__active = False
                 self._done = True
-                self.pixi.stage.removeChild(self.__text_field)
+                self.pixi.stage.removeChild(self._inst__text_field)
                 self.pixi.ticker.start()
             else:
-                text = self.__instructions[self.__current_index]
-                self.__text_field.text = text
+                text = self._inst__instructions[self._inst__current_index]
+                self._inst__text_field.text = text
                 self.pixi.render()
+                self.confirm(self.displayInstructions)
                 
+class LearnMixin(Confirmable):
+    pixi = None
+    
+    WAIT_TIMES = [15.0, 15.0] # maximum presentation times before program automatically continues, , PP can move on self-paced earlier
+    ANIMATION_TIME = 0.01
+    
+    TEXT_HEIGHT = 0.1
+    
+    
+    def __init__(self):
+        super().__init__()
         
+        self._learn__image_sprite = None
+        self._learn__loader = do_new(PIXI.Loader)
+        
+        self._learn__word_sprite = do_new(
+            PIXI.Text,
+            "",
+            {
+                "fontFamily": "Arial",
+                "fontSize": 24,
+                "fill": 0x000000,
+            })
+        self._learn__word_sprite.position.x = 200
+        self._learn__word_sprite.position.y = 500
+
+        self._learn__translation_sprite = do_new(
+            PIXI.Text,
+            "",
+            {
+                "fontFamily": "Arial",
+                "fontSize": 24,
+                "fill": 0x000000,
+            })
+        self._learn__translation_sprite.position.x = 500
+        self._learn__translation_sprite.position.y = 500
+        
+    def _learn__destroy_image(self):
+        if self._learn__image_sprite:
+            self.pixi.stage.removeChild(self._learn__image_sprite)
+            self._learn__image_sprite.destroy()
+            self._learn__image_sprite = None
+    
+    def _learn__create_image_sprite(self, image_url):
+        sprite = do_new(PIXI.Sprite["from"], 
+            self._learn__loader.resources[image_url].texture)
+        sprite.position.set(100, 50)
+        x_scale = 600 / sprite.texture.orig.width
+        y_scale = (500 - 2 * sprite.position.y) / sprite.texture.orig.height
+        scale = min(x_scale, y_scale)
+        sprite.scale = do_new(PIXI.Point, scale, scale)
+        print("scale:", scale)
+         
+        self._learn__image_sprite = sprite
+        self.pixi.stage.addChild(self._learn__image_sprite)
+        
+        self.pixi.render()
+    
+    def learn(self, image, word, translation):
+        self._done = False
+        
+        self.pixi.ticker.stop()
+        
+        self._learn__destroy_image()
+        
+        image_url = "resources/images/" + image
+        if self._learn__loader.resources[image_url]:
+            self._learn__create_image_sprite(image_url)
+        else:
+            self._learn__loader.add(image_url)
+            self._learn__loader.load(
+                lambda *_: self._learn__create_image_sprite(image_url))
+        
+        self._learn__word_sprite.text = word
+        self._learn__translation_sprite.text = translation
+        
+        self.pixi.stage.addChild(self._learn__word_sprite)
+        self.pixi.stage.addChild(self._learn__translation_sprite)
+        
+        self.pixi.render()
+        
+        self.confirm(self._learn__learn_done)
+        
+    def _learn__learn_done(self):
+        self.pixi.stage.removeChild(self._learn__image_sprite)
+        self.pixi.stage.removeChild(self._learn__word_sprite)
+        self.pixi.stage.removeChild(self._learn__translation_sprite)
+        self.pixi.ticker.start()
+        self._done = True
 
 
-class PIXIInterface(InstructionsMixin):
+
+class PIXIInterface(InstructionsMixin, LearnMixin):
     def __init__(self, dom_element):
+        self.__done = True
+        self.done_callback = None
+        
         self.pixi = do_new(PIXI.Application,
             800, 600, 
             {
@@ -75,9 +185,8 @@ class PIXIInterface(InstructionsMixin):
         dom_element.appendChild(self.pixi.view)
         window.pixi_app = self.pixi
         
+        LearnMixin.__init__(self)
         InstructionsMixin.__init__(self)
-        
-        self.__done = True
 
     @property
     def _done(self):
@@ -85,15 +194,15 @@ class PIXIInterface(InstructionsMixin):
     
     @_done.setter
     def _done(self, v):
+        call = not self.__done and v 
         self.__done = v
+        if call and self.done_callback != None:
+            self.done_callback()
 
     @property
     def done(self):
         return self._done
     
-    def learn(self, image, word, translation):
-        raise NotImplementedError()
-
     def test(self, word, answerToDisplay, imageAnswer):
         raise NotImplementedError()
 

@@ -154,8 +154,10 @@ class AssignmentModel(object):
             # ACTIVATION_THRESHOLD_RETEST
             predictionTime = self.main_timer + ACTIVATION_PREDICTION_TIME_OFFSET
             minActivation, minActivationStimulus = \
-                min([(calculateActivation(s, predictionTime), s) for s in presentedItems],
-                    key=lambda x: x[0])
+                min([
+                        (calculateActivation(s, predictionTime), s) 
+                        for s in presentedItems
+                    ], key=lambda x: x[0])
             if minActivation <= ACTIVATION_THRESHOLD_RETEST:
                 stimulus = minActivationStimulus
         if not stimulus:
@@ -167,10 +169,14 @@ class AssignmentModel(object):
         if not stimulus:
             raise ValueError("Could not select any stimulus for presentation")
 
-        #newPresentation = WordItemPresentation()
-        #presentationStartTime = self.main_timer
-        #newPresentation.decay = calculateNewDecay(
-        #        stimulus, presentationStartTime)
+        newPresentation = WordItemPresentation()
+        presentationStartTime = self.main_timer
+        newPresentation.decay = \
+            calculateNewDecay(stimulus, presentationStartTime)
+        
+        if len(stimulus.presentations) == 0:
+            self.__app_interface.learn(
+                stimulus.image, stimulus.name, stimulus.translation)
 
 
     def __run(self):

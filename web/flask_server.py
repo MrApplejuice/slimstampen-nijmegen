@@ -4,7 +4,7 @@ import os
 app = flask.Flask(__name__, static_url_path='')
 
 @app.route('/<path>')
-@app.route('/<subdir>/<path>')
+@app.route('/<path:subdir>/<path>')
 def static_path(path, subdir=None):
     if subdir:
         path = os.path.join(subdir, path)
