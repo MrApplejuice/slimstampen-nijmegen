@@ -13,6 +13,16 @@ def enter_leave_print(text):
     return decorate
 
 
+def py_min(seq, key=None):
+    if key is None:
+        return min(seq)
+    else:
+        m = min([key(x) for x in seq])
+        for x in seq:
+            if key(x) == m:
+                return x
+
+
 class WordItemPresentation:
     def __init__(self, time=0, decay=0):
         self.decay = decay
@@ -133,6 +143,59 @@ class AssignmentModel(object):
     def main_timer(self):
         return (js_time() - self.__main_time) / 1000
 
+    def __new_presentation(self):
+        presented_items = [
+            x for x in self.__stimuli if len(x.presentations) > 0
+        ]
+        stimulus = None
+        min_activation_stimulus = None
+        
+        if len(presented_items) > 0:
+            # Select item from presented items with activation <=
+            # ACTIVATION_THRESHOLD_RETEST
+            predictionTime = self.main_timer + ACTIVATION_PREDICTION_TIME_OFFSET
+            activation_pairs = [
+                (calculateActivation(s, predictionTime), s) 
+                for s in presented_items
+            ]
+            minActivation, min_activation_stimulus = \
+                py_min(activation_pairs, key=lambda x: x[0])
+            if minActivation <= ACTIVATION_THRESHOLD_RETEST:
+                stimulus = min_activation_stimulus
+        if not stimulus:
+            # None under that threshold? Add a new item if possible
+            if len(presented_items) < len(self.__stimuli):
+                stimulus = self.__stimuli[len(presented_items)]
+        if not stimulus:
+            stimulus = min_activation_stimulus
+        if not stimulus:
+            raise ValueError("Could not select any stimulus for presentation")
+
+        new_presentation = WordItemPresentation()
+        presentation_start_time = self.main_timer
+        new_presentation.decay = \
+            calculateNewDecay(stimulus, presentation_start_time)
+            
+        self.__state = {
+            "type": None,
+            "answer": None,
+            "item": stimulus,
+            "start_time": presentation_start_time,
+            "new_presentation": new_presentation,
+        }
+        
+        if len(stimulus.presentations) == 0:
+            self.__state["type"] = "learn"
+            self.__app_interface.learn(
+                stimulus.image, stimulus.name, stimulus.translation)
+        else:
+            print("MUST TEST NOW")
+
+    @enter_leave_print("__add_presentation")
+    def __add_presentation(self, stimulus, presentation, start_time):
+        presentation.time = start_time
+        stimulus.presentations.append(presentation)
+
     @enter_leave_print("iter_run")
     def iter_run(self):
         if not self.__app_interface.done:
@@ -141,42 +204,20 @@ class AssignmentModel(object):
         if self.__state is None:
             self.__state = "instructions"
             self.__app_interface.displayInstructions()
-            return
+        elif self.__state == "instructions":
+            self.__new_presentation()
+        elif not isinstance(self.__state, dict):
+            print(f"ERROR: Invalid state: {self.__state}")
+        elif self.__state.get("type") == "learn":
+            self.__add_presentation(
+                self.__state["item"],
+                self.__state["new_presentation"],
+                self.__state["start_time"])
+            self.__new_presentation()
+        else:
+            print("ERROR: ULTIMATE ELSE")
         
-        presentedItems = [
-            x for x in self.__stimuli if len(x.presentations) > 0
-        ]
         
-        stimulus = None
-        minActivationStimulus = None
-        if len(presentedItems) > 0:
-            # Select item from presented items with activation <=
-            # ACTIVATION_THRESHOLD_RETEST
-            predictionTime = self.main_timer + ACTIVATION_PREDICTION_TIME_OFFSET
-            minActivation, minActivationStimulus = \
-                min([
-                        (calculateActivation(s, predictionTime), s) 
-                        for s in presentedItems
-                    ], key=lambda x: x[0])
-            if minActivation <= ACTIVATION_THRESHOLD_RETEST:
-                stimulus = minActivationStimulus
-        if not stimulus:
-            # None under that threshold? Add a new item if possible
-            if len(presentedItems) < len(self.__stimuli):
-                stimulus = self.__stimuli[len(presentedItems)]
-        if not stimulus:
-            stimulus = minActivationStimulus
-        if not stimulus:
-            raise ValueError("Could not select any stimulus for presentation")
-
-        newPresentation = WordItemPresentation()
-        presentationStartTime = self.main_timer
-        newPresentation.decay = \
-            calculateNewDecay(stimulus, presentationStartTime)
-        
-        if len(stimulus.presentations) == 0:
-            self.__app_interface.learn(
-                stimulus.image, stimulus.name, stimulus.translation)
 
 
     def __run(self):
@@ -190,8 +231,9 @@ class AssignmentModel(object):
 
             if len(stimulus.presentations) == 0:
                 # First presentation of stimulus
-                self.__app_interface.learn(
-                        stimulus.image, stimulus.name, stimulus.translation)
+                #self.__app_interface.learn(
+                #        stimulus.image, stimulus.name, stimulus.translation)
+                pass
             else:
                 # Second presentations of stimulus
                 response = self.__app_interface.test(stimulus.name)
