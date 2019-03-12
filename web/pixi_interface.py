@@ -13,8 +13,13 @@ class Confirmable:
         window.addEventListener("keydown", self._confirmable__button_pressed)
         
         self.pixi.view.addEventListener("click", self._confirmable__clicked)
+        
+        self._confirm__timeout = None
     
     def _confirmable_confim(self):
+        if self._confirm__timeout is not None:
+            window.clearTimeout(self._confirm__timeout)
+            self._confirm__timeout = None
         if not self._Confirmable__call == None:
             call = self._Confirmable__call
             self._Confirmable__call = None
@@ -29,6 +34,13 @@ class Confirmable:
 
     def confirm(self, call):
         self._Confirmable__call = call
+        
+    def timed_confirm(self, call, timeout=None):
+        self.confirm(call)
+        if timeout is not None:
+            self._confirm__timeout = window.setTimeout(
+                lambda *_: self._confirmable_confim(),
+                1000 * timeout)
     
 
 class InstructionsMixin(Confirmable):
@@ -91,7 +103,7 @@ class InstructionsMixin(Confirmable):
 class LearnMixin(Confirmable):
     pixi = None
     
-    WAIT_TIMES = [15.0, 15.0] # maximum presentation times before program automatically continues, , PP can move on self-paced earlier
+    LEARN_WAIT_TIMES = [15.0, 15.0] # maximum presentation times before program automatically continues, , PP can move on self-paced earlier
     ANIMATION_TIME = 0.01
     
     TEXT_HEIGHT = 0.1
@@ -162,15 +174,22 @@ class LearnMixin(Confirmable):
                 lambda *_: self._learn__create_image_sprite(image_url))
         
         self._learn__word_sprite.text = word
+        
         self._learn__translation_sprite.text = translation
+        self._learn__translation_sprite.visible = False
         
         self.pixi.stage.addChild(self._learn__word_sprite)
         self.pixi.stage.addChild(self._learn__translation_sprite)
         
         self.pixi.render()
         
-        self.confirm(self._learn__learn_done)
+        self.timed_confirm(self._learn__show_translation, self.LEARN_WAIT_TIMES[0])
         
+    def _learn__show_translation(self):
+        self._learn__translation_sprite.visible = True
+        self.pixi.render()
+        self.timed_confirm(self._learn__learn_done, self.LEARN_WAIT_TIMES[1])
+    
     def _learn__learn_done(self):
         self.pixi.stage.removeChild(self._learn__image_sprite)
         self.pixi.stage.removeChild(self._learn__word_sprite)
