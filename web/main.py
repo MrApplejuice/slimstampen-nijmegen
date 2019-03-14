@@ -33,14 +33,14 @@ def load_all_images(imagePathList):
 def main():
     stimuli = [
         {
-            "word": "test",
+            "word": f"test-{i}",
             "translation": "ttest",
-            "image": "room1.jpg"
-        }
-    ] * 10
+            "image": f"room{(i+1)%10}.jpg"
+        } for i in range(10)
+    ]
     
     pixi_interface = PIXIInterface(
-        document.body)
+        document.getElementById("main"))
     model = AssignmentModel(pixi_interface, stimuli)
 
     pixi_interface.done_callback = lambda : window.setTimeout(model.iter_run, 0)

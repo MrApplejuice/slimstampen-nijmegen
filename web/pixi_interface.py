@@ -198,8 +198,61 @@ class LearnMixin(Confirmable):
         self._done = True
 
 
+class TestMixin(Confirmable):
+    pixi = None
+    
+    def __init__(self, dom_element):
+        super().__init__()
+        
+        self._test__word_sprite = do_new(
+            PIXI.Text,
+            "",
+            {
+                "fontFamily": "Arial",
+                "fontSize": 24,
+                "fill": 0x000000,
+            })
+        self._test__word_sprite.position.x = 200
+        self._test__word_sprite.position.y = 500
+        self._test__word_sprite.visible = False
+        self.pixi.stage.addChild(self._test__word_sprite)
+        
+        self._test__text_input = jQuery('<input type="text" value="" />')
+        self._test__text_input.css("position", "absolute")
+        self._test__text_input.css("left", "500")
+        self._test__text_input.css("top", "495")
+        self._test__text_input.css("font-size", "24px")
+        self._test__text_input.css("color", "black")
+        self._test__text_input.css("display", "none")
+        jQuery(dom_element).append(self._test__text_input)
+    
+    def test(self, word, translation, image):
+        self._done = False
+        
+        self._test__word_sprite.text = word
+        
+        self._test__translation = translation
+        self._test__word_sprite.visible = True
+        
+        self._test__text_input.val("")
+        self._test__text_input.css("display", "block")
+        self._test__text_input.focus()
+        
+        self.pixi.ticker.stop()
+        self.pixi.render()
+        
+        self.confirm(self._test__confimed)
+        
+    def _test__confimed(self):
+        self._test__text_input.css("display", "none")
+        self._test__word_sprite.visible = False
+        
+        self.pixi.ticker.start()
+        self._done = True
+        
 
-class PIXIInterface(InstructionsMixin, LearnMixin):
+
+class PIXIInterface(InstructionsMixin, LearnMixin, TestMixin):
     def __init__(self, dom_element):
         self.__done = True
         self.done_callback = None
@@ -214,6 +267,7 @@ class PIXIInterface(InstructionsMixin, LearnMixin):
         
         LearnMixin.__init__(self)
         InstructionsMixin.__init__(self)
+        TestMixin.__init__(self, dom_element)
 
     @property
     def _done(self):
@@ -230,9 +284,6 @@ class PIXIInterface(InstructionsMixin, LearnMixin):
     def done(self):
         return self._done
     
-    def test(self, word, answerToDisplay, imageAnswer):
-        raise NotImplementedError()
-
     def displayCorrect(self, typedWord, correctAnswer):
         raise NotImplementedError()
 

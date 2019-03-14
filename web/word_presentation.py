@@ -189,7 +189,9 @@ class AssignmentModel(object):
             self.__app_interface.learn(
                 stimulus.image, stimulus.name, stimulus.translation)
         else:
-            print("MUST TEST NOW")
+            self.__state["type"] = "test"
+            self.__app_interface.test(
+                stimulus.name, stimulus.translation, stimulus.image)
 
     @enter_leave_print("__add_presentation")
     def __add_presentation(self, stimulus, presentation, start_time):
@@ -208,7 +210,7 @@ class AssignmentModel(object):
             self.__new_presentation()
         elif not isinstance(self.__state, dict):
             print(f"ERROR: Invalid state: {self.__state}")
-        elif self.__state.get("type") == "learn":
+        elif self.__state.get("type") in ["learn", "test"]:
             self.__add_presentation(
                 self.__state["item"],
                 self.__state["new_presentation"],
