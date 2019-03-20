@@ -12,7 +12,7 @@ class Confirmable:
         self._Confirmable__call = None
         window.addEventListener("keydown", self._confirmable__button_pressed)
         
-        self.pixi.view.addEventListener("click", self._confirmable__clicked)
+        jQuery(self.pixi.view).on("click", self._confirmable__clicked)
         
         self._confirm__timeout = None
     
@@ -226,31 +226,36 @@ class TestMixin(Confirmable):
         self._test__text_input.css("display", "none")
         jQuery(dom_element).append(self._test__text_input)
     
-    def test(self, word, translation, image):
-        self._done = False
-        
+    def _test__show_words(self, word, translation, real_translation=None):
         self._test__word_sprite.text = word
         
         self._test__translation = translation
         self._test__word_sprite.visible = True
         
-        self._test__text_input.val("")
+        self._test__text_input.val(translation)
         self._test__text_input.css("display", "block")
         self._test__text_input.focus()
+    
+    def test(self, word, translation, image):
+        self._done = False
+        
+        self._test__show_words(word, "")
         
         self.pixi.ticker.stop()
         self.pixi.render()
         
         self.confirm(self._test__confimed)
         
+    def displayCorrect(self, word, real_translation):
+        self._done = False
+        self._test__show_words(word, real_translation)
+
     def _test__confimed(self):
         self._test__text_input.css("display", "none")
         self._test__word_sprite.visible = False
         
         self.pixi.ticker.start()
         self._done = True
-        
-
 
 class PIXIInterface(InstructionsMixin, LearnMixin, TestMixin):
     def __init__(self, dom_element):
@@ -284,9 +289,6 @@ class PIXIInterface(InstructionsMixin, LearnMixin, TestMixin):
     def done(self):
         return self._done
     
-    def displayCorrect(self, typedWord, correctAnswer):
-        raise NotImplementedError()
-
     def displayWrong(self, typedWord, correctAnswer, image):
         raise NotImplementedError()
 

@@ -9,12 +9,35 @@
 		#main > input[type="text"] {
 			background-color: transparent;
 			border-style: none;
+			outline: none;
 		}
 	</style>
 </head>
 <body>
 <script src="jquery-3.3.1.min.js"></script>
 <script src="pixi.js"></script>
+<script>
+window.addEventListener('error', function(event) {
+	console.log("Reporting error!");
+	jQuery.ajax(
+		{
+			url: "/report_error",
+			method: "POST",
+			processData: false,
+			contentType: "application/json",
+			data: JSON.stringify({
+				message: event.message,
+				source: event.filename,
+				line_number: event.lineno,
+				column_number: event.colno
+			})
+		}
+	).done(function() {
+		console.log("Error reported to server");
+	});
+	return true;
+});
+</script>
 <script type="text/javascript">
 function do_new(obj, ...args) {
 	return new obj(...args);
