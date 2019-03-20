@@ -197,8 +197,7 @@ class AssignmentModel(object):
             
             self.__state["type"] = "test"
             self.__app_interface.test(
-                stimulus.name, stimulus.translation, stimulus.image,
-                entered_word_callback=word_entered)
+                stimulus, entered_word_callback=word_entered)
 
     @enter_leave_print("__add_presentation")
     def __add_presentation(self, stimulus, presentation, start_time):
@@ -218,17 +217,26 @@ class AssignmentModel(object):
         elif not isinstance(self.__state, dict):
             print(f"ERROR: Invalid state: {self.__state}")
         elif self.__state.get("type") == "test":
+            self.__state["type"] = "post-test"
             stimulus = self.__state["item"]
             if self.__entered_word == stimulus.translation.lower():
                 self.currentScore += CORRECT_ANSWER_SCORE
                 self.__app_interface.updateHighscore(self.currentScore)
                 
-                self.__state["type"] = "post-test"
-                
                 self.__app_interface.displayCorrect(
-                    self.__entered_word, stimulus.translation)
+                    stimulus, self.__entered_word)
             else:
-                print("WRONG RESPONSE NOT HANDLED! - YET")
+                stimulus.alpha += ALPHA_ERROR_ADJUSTMENT_SUMMAND
+                self.__state["new_presentation"].decay = calculateNewDecay(
+                    stimulus, self.__state["start_time"])
+
+                print("TODO: Mixedup word test!")
+                #mixedUpWord = self.findMixedUpWord(response)
+                #if mixedUpWord:
+                #    self.__app_interface.mixedup(
+                #            stimulus.name, stimulus.translation, mixedUpWord.name, mixedUpWord.translation)
+                #else:
+                self.__app_interface.displayWrong(stimulus, self.__entered_word)
         elif self.__state.get("type") in ["learn", "post-test"]:
             self.__add_presentation(
                 self.__state["item"],
@@ -259,18 +267,7 @@ class AssignmentModel(object):
                 # Second presentations of stimulus
                 response = self.__app_interface.test(stimulus.name)
 
-                if not response.lower() == stimulus.translation.lower():
-                    stimulus.alpha += ALPHA_ERROR_ADJUSTMENT_SUMMAND
-                    newPresentation.decay = calculateNewDecay(
-                            stimulus, presentationStartTime)
-
-                    mixedUpWord = self.findMixedUpWord(response)
-                    if mixedUpWord:
-                        self.__app_interface.mixedup(
-                                stimulus.name, stimulus.translation, mixedUpWord.name, mixedUpWord.translation)
-                    else:
-                        self.__app_interface.displayWrong(
-                                response, stimulus.translation, stimulus.image)
+                #if not response.lower() == stimulus.translation.lower():
 
             newPresentation.time = presentationStartTime
             stimulus.presentations.append(newPresentation)

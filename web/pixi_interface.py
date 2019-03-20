@@ -115,6 +115,8 @@ class LearnMixin(Confirmable):
         self._learn__image_sprite = None
         self._learn__loader = do_new(PIXI.Loader)
         
+        self._learn__sprite_visible = True
+        
         self._learn__word_sprite = do_new(
             PIXI.Text,
             "",
@@ -143,6 +145,16 @@ class LearnMixin(Confirmable):
             self._learn__image_sprite.destroy()
             self._learn__image_sprite = None
     
+    @property
+    def learn_sprite_visible(self):
+        return self._learn__sprite_visible
+    
+    @learn_sprite_visible.setter
+    def learn_sprite_visible(self, value):
+        self._learn__sprite_visible = bool(value)
+        if self._learn__image_sprite is not None:
+            self._learn__image_sprite.visible = self._learn__sprite_visible
+    
     def _learn__create_image_sprite(self, image_url):
         sprite = do_new(PIXI.Sprite["from"], 
             self._learn__loader.resources[image_url].texture)
@@ -151,28 +163,34 @@ class LearnMixin(Confirmable):
         y_scale = (500 - 2 * sprite.position.y) / sprite.texture.orig.height
         scale = min(x_scale, y_scale)
         sprite.scale = do_new(PIXI.Point, scale, scale)
-        print("scale:", scale)
          
         self._learn__image_sprite = sprite
+        self._learn__image_sprite.visible = self.learn_sprite_visible
         self.pixi.stage.addChild(self._learn__image_sprite)
         
         self.pixi.render()
     
-    def learn(self, image, word, translation):
-        self._done = False
-        
-        self.pixi.ticker.stop()
-        
+    def learn_prepare_image(self, image):
         self._learn__destroy_image()
         
         image_url = "resources/images/" + image
         if self._learn__loader.resources[image_url]:
             self._learn__create_image_sprite(image_url)
+            return True
         else:
             self._learn__loader.add(image_url)
             self._learn__loader.load(
                 lambda *_: self._learn__create_image_sprite(image_url))
+            return False
+    
+    def learn(self, image, word, translation):
+        self._done = False
         
+        self.pixi.ticker.stop()
+
+        self.learn_prepare_image(image)
+
+        self.learn_sprite_visible = True        
         self._learn__word_sprite.text = word
         
         self._learn__translation_sprite.text = translation
@@ -191,17 +209,19 @@ class LearnMixin(Confirmable):
         self.timed_confirm(self._learn__learn_done, self.LEARN_WAIT_TIMES[1])
     
     def _learn__learn_done(self):
-        self.pixi.stage.removeChild(self._learn__image_sprite)
         self.pixi.stage.removeChild(self._learn__word_sprite)
         self.pixi.stage.removeChild(self._learn__translation_sprite)
+        
+        self.learn_sprite_visible = False
         self.pixi.ticker.start()
         self._done = True
 
 
-class TestMixin(Confirmable):
+class TestMixin(LearnMixin, Confirmable):
     pixi = None
     
     CORRECT_WORD_WAIT_TIME = 1
+    WRONG_WORD_WAIT_TIME = 2
     
     def __init__(self, dom_element):
         super().__init__()
@@ -239,24 +259,25 @@ class TestMixin(Confirmable):
         self._test__text_input.val(translation)
         self._test__text_input.css("display", "block")
         self._test__text_input.css("color", "")
+        self._test__text_input.css("text-decoration", "")
         self._test__text_input.prop('disabled', False)
         self._test__text_input.focus()
     
-    def test(self, word, translation, image, entered_word_callback=None):
+    def test(self, word, entered_word_callback=None):
         self._done = False
         
         self.__test_entered_word_callback = entered_word_callback
         
-        self._test__show_words(word, "")
+        self._test__show_words(word.name, "")
         
         self.pixi.ticker.stop()
         self.pixi.render()
         
         self.confirm(self._test__confimed)
         
-    def displayCorrect(self, word, real_translation):
+    def displayCorrect(self, word, entered):
         self._done = False
-        self._test__show_words(word, real_translation)
+        self._test__show_words(word.name, entered)
         self._test__text_input.css("color", "green")
         self._test__text_input.prop('disabled', True)
         
@@ -264,9 +285,24 @@ class TestMixin(Confirmable):
             lambda *_: self._test__confimed(),
             1000 * self.CORRECT_WORD_WAIT_TIME)
         
+    def displayWrong(self, word, entered):
+        self.learn_sprite_visible = True
+        self.learn_prepare_image(word.image)
+        
+        self._done = False
+        self._test__show_words(word.name, entered)
+        self._test__text_input.css("color", "red")
+        self._test__text_input.css("text-decoration", "line-through")
+        self._test__text_input.prop('disabled', True)
+        
+        window.setTimeout(
+            lambda *_: self._test__confimed(),
+            1000 * self.WRONG_WORD_WAIT_TIME)
+
     def _test__confimed(self):
         self._test__text_input.css("display", "none")
         self._test__word_sprite.visible = False
+        self.learn_sprite_visible = False
         
         if self.__test_entered_word_callback is not None:
             self.__test_entered_word_callback(self._test__text_input.val())
@@ -307,9 +343,6 @@ class PIXIInterface(InstructionsMixin, LearnMixin, TestMixin):
     def done(self):
         return self._done
     
-    def displayWrong(self, typedWord, correctAnswer, image):
-        raise NotImplementedError()
-
     def mixedup(self, leftUpper, leftLower, rightUpper, rightLower):
         raise NotImplementedError()
 
