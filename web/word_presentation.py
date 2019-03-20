@@ -116,6 +116,8 @@ class AssignmentModel(object):
 
         self.currentScore = 0
 
+        self.__entered_word = None
+        
         self.__main_time = js_time()
         self.__total_test_time = js_time()
         self.__inbetween_session_time = js_time()
@@ -189,9 +191,14 @@ class AssignmentModel(object):
             self.__app_interface.learn(
                 stimulus.image, stimulus.name, stimulus.translation)
         else:
+            self.__entered_word = None
+            def word_entered(word):
+                self.__entered_word = word 
+            
             self.__state["type"] = "test"
             self.__app_interface.test(
-                stimulus.name, stimulus.translation, stimulus.image)
+                stimulus.name, stimulus.translation, stimulus.image,
+                entered_word_callback=word_entered)
 
     @enter_leave_print("__add_presentation")
     def __add_presentation(self, stimulus, presentation, start_time):
@@ -210,7 +217,19 @@ class AssignmentModel(object):
             self.__new_presentation()
         elif not isinstance(self.__state, dict):
             print(f"ERROR: Invalid state: {self.__state}")
-        elif self.__state.get("type") in ["learn", "test"]:
+        elif self.__state.get("type") == "test":
+            stimulus = self.__state["item"]
+            if self.__entered_word == stimulus.translation.lower():
+                self.currentScore += CORRECT_ANSWER_SCORE
+                self.__app_interface.updateHighscore(self.currentScore)
+                
+                self.__state["type"] = "post-test"
+                
+                self.__app_interface.displayCorrect(
+                    self.__entered_word, stimulus.translation)
+            else:
+                print("WRONG RESPONSE NOT HANDLED! - YET")
+        elif self.__state.get("type") in ["learn", "post-test"]:
             self.__add_presentation(
                 self.__state["item"],
                 self.__state["new_presentation"],
@@ -240,12 +259,7 @@ class AssignmentModel(object):
                 # Second presentations of stimulus
                 response = self.__app_interface.test(stimulus.name)
 
-                if response.lower() == stimulus.translation.lower():
-                    self.currentScore += CORRECT_ANSWER_SCORE
-                    self.__app_interface.updateHighscore(self.currentScore)
-                    self.__app_interface.displayCorrect(response, stimulus.translation)
-                    repeat = False
-                else:
+                if not response.lower() == stimulus.translation.lower():
                     stimulus.alpha += ALPHA_ERROR_ADJUSTMENT_SUMMAND
                     newPresentation.decay = calculateNewDecay(
                             stimulus, presentationStartTime)

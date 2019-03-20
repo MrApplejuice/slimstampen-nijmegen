@@ -20,7 +20,7 @@ class Confirmable:
         if self._confirm__timeout is not None:
             window.clearTimeout(self._confirm__timeout)
             self._confirm__timeout = None
-        if not self._Confirmable__call == None:
+        if self._Confirmable__call is not None:
             call = self._Confirmable__call
             self._Confirmable__call = None
             call()
@@ -201,8 +201,12 @@ class LearnMixin(Confirmable):
 class TestMixin(Confirmable):
     pixi = None
     
+    CORRECT_WORD_WAIT_TIME = 1
+    
     def __init__(self, dom_element):
         super().__init__()
+        
+        self.__test_entered_word_callback = None
         
         self._test__word_sprite = do_new(
             PIXI.Text,
@@ -234,10 +238,13 @@ class TestMixin(Confirmable):
         
         self._test__text_input.val(translation)
         self._test__text_input.css("display", "block")
+        self._test__text_input.css("color", "")
         self._test__text_input.focus()
     
-    def test(self, word, translation, image):
+    def test(self, word, translation, image, entered_word_callback=None):
         self._done = False
+        
+        self.__test_entered_word_callback = entered_word_callback
         
         self._test__show_words(word, "")
         
@@ -249,10 +256,19 @@ class TestMixin(Confirmable):
     def displayCorrect(self, word, real_translation):
         self._done = False
         self._test__show_words(word, real_translation)
-
+        self._test__text_input.css("color", "green")
+        
+        window.setTimeout(
+            lambda *_: self._test__confimed(),
+            1000 * self.CORRECT_WORD_WAIT_TIME)
+        
     def _test__confimed(self):
         self._test__text_input.css("display", "none")
         self._test__word_sprite.visible = False
+        
+        if self.__test_entered_word_callback is not None:
+            self.__test_entered_word_callback(self._test__text_input.val())
+        self.__test_entered_word_callback = None
         
         self.pixi.ticker.start()
         self._done = True
@@ -296,7 +312,7 @@ class PIXIInterface(InstructionsMixin, LearnMixin, TestMixin):
         raise NotImplementedError()
 
     def updateHighscore(self, score):
-        raise NotImplementedError()
+        print(f"Current score: {score}")
 
     def startInbetweenSession(self, imageWordPairs):
         raise NotImplementedError()
