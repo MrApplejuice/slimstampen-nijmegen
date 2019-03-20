@@ -239,6 +239,7 @@ class TestMixin(Confirmable):
         self._test__text_input.val(translation)
         self._test__text_input.css("display", "block")
         self._test__text_input.css("color", "")
+        self._test__text_input.prop('disabled', False)
         self._test__text_input.focus()
     
     def test(self, word, translation, image, entered_word_callback=None):
@@ -257,6 +258,7 @@ class TestMixin(Confirmable):
         self._done = False
         self._test__show_words(word, real_translation)
         self._test__text_input.css("color", "green")
+        self._test__text_input.prop('disabled', True)
         
         window.setTimeout(
             lambda *_: self._test__confimed(),
@@ -281,7 +283,7 @@ class PIXIInterface(InstructionsMixin, LearnMixin, TestMixin):
         self.pixi = do_new(PIXI.Application,
             800, 600, 
             {
-                "backgroundColor": 0xFF0000
+                "backgroundColor": 0xA0A0A0
             })
         dom_element.appendChild(self.pixi.view)
         window.pixi_app = self.pixi
